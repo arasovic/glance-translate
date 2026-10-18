@@ -63,7 +63,7 @@
     @media (prefers-reduced-motion: reduce) { .busy i { animation: none; opacity: .7; } }
   `;
 
-  let host, root, icon, card, last, langs;
+  let host, root, icon, card, last, langs, dwell;
 
   function ensureHost() {
     if (!host) {
@@ -76,12 +76,15 @@
       card = root.querySelector('.card');
       icon.addEventListener('mousedown', e => e.preventDefault()); // Keep the page Selection.
       icon.addEventListener('click', () => { hideIcon(); translateSelection(last); });
+      // Resting the mouse on the icon also starts the translation; a pass across it does not.
+      icon.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') dwell = setTimeout(() => icon.click(), 200); });
+      icon.addEventListener('pointerleave', () => clearTimeout(dwell));
       card.addEventListener('keydown', e => e.key === 'Escape' && closeAll());
     }
     if (!host.isConnected) document.documentElement.append(host);
   }
 
-  const hideIcon = () => icon && (icon.hidden = true);
+  const hideIcon = () => { clearTimeout(dwell); if (icon) icon.hidden = true; };
   function closeAll() {
     hideIcon();
     if (card) { card.hidden = true; card.textContent = ''; }
