@@ -94,7 +94,10 @@
   function closeAll() {
     hideIcon();
     moved = false;
-    if (card) { card.hidden = true; card.textContent = ''; }
+    // Our speech plays only while the card is open; otherwise the speech is the page's own.
+    if (!card || card.hidden) return;
+    card.hidden = true;
+    card.textContent = '';
     speechSynthesis.cancel();
   }
 
@@ -375,10 +378,7 @@
   addEventListener('scroll', hideIcon, { passive: true, capture: true });
   // A click in another frame of the tab never reaches this document; this window loses focus instead.
   // The top frame keeps the card when the whole page loses focus (another tab or app); an iframe cannot tell the two apart.
-  addEventListener('blur', () => setTimeout(() => {
-    const shown = host?.isConnected && (!icon.hidden || !card.hidden);
-    if (shown && (window !== top || document.hasFocus())) closeAll();
-  }));
+  addEventListener('blur', () => setTimeout(() => { if (window !== top || document.hasFocus()) closeAll(); }));
 
   document.addEventListener('mouseup', e => {
     if (e.button !== 0 || inHost(e)) return;
