@@ -61,8 +61,8 @@ test('output language: Keyless Providers re-request with the Second Language whe
 
 test('chain: default chains', () => {
   assert.deepEqual(core.defaultChain(false), ['chrome', 'microsoft', 'google']);
-  assert.deepEqual(core.defaultChain(true).slice(0, 2), ['openrouter:google/gemma-4-31b-it:free', 'openrouter:openrouter/free']);
-  assert.deepEqual(core.defaultChain(true).slice(-3), ['chrome', 'microsoft', 'google']);
+  assert.deepEqual(core.defaultChain(true).slice(0, 3), ['chrome', 'microsoft', 'google']);
+  assert.deepEqual(core.defaultChain(true).slice(3), ['openrouter:nvidia/nemotron-3-super-120b-a12b:free', 'openrouter:dots-studio/dots-3-note-preview:free']);
   assert.equal(core.entryLabel('openrouter:openrouter/free'), 'openrouter/free');
   assert.equal(core.entryLabel('chrome'), 'Chrome on-device');
 });

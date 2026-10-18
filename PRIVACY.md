@@ -17,7 +17,7 @@ Only the Selection leaves the browser, and only when a Fallback Chain entry that
 | You click an Offline Pack download button | The language pair | Chrome downloads the pack from Google |
 | You click Listen | The translation | Your browser's speech voices. Some browsers offer voices that run on a network service; the extension prefers voices that run on the device. |
 
-The entries are tried in the order of your Fallback Chain, and the first one that answers stops the walk. With the default chain and no key, Chrome on-device is tried first; Microsoft and Google get the Selection only when Chrome cannot translate it.
+The entries are tried in the order of your Fallback Chain, and the first one that answers stops the walk. With the default chain, Chrome on-device is tried first; Microsoft and Google get the Selection only when Chrome cannot translate it. With a key, AI Models get it only when all three fail, or when you pick a Model in the Translation Card.
 
 Microsoft, Google, OpenRouter and the Model providers handle the text under their own privacy policies. Some Free Models on OpenRouter are offered by providers that may log or train on requests. Check OpenRouter's privacy settings for your account if this matters to you.
 

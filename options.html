@@ -40,7 +40,7 @@
 <body>
 <main>
   <header><img src="icons/icon-128.png" alt=""><h1>Select Translate</h1></header>
-  <p class="note">Select Translate works without a key. Chrome's on-device translator, Microsoft and Google translate your Selections out of the box. Add an OpenRouter key to translate with AI Models.</p>
+  <p class="note">Select Translate works without a key. Chrome's on-device translator, Microsoft and Google translate your Selections out of the box. Add an OpenRouter key to use AI Models as a backup, or pick one in the Translation Card's “Translate with another entry” menu.</p>
 
   <section id="providers">
     <h2>Providers</h2>
@@ -60,7 +60,7 @@
     <p class="d">Tried from top to bottom until one entry answers. An entry that reports a rate limit is skipped until its Cooldown ends.</p>
     <ol class="rows" id="chainList"></ol>
     <div class="line">
-      <input id="entry" list="entryList" spellcheck="false" placeholder="google/gemma-4-31b-it:free" aria-label="Model id or Provider to add">
+      <input id="entry" list="entryList" spellcheck="false" placeholder="nvidia/nemotron-3-super-120b-a12b:free" aria-label="Model id or Provider to add">
       <datalist id="entryList"></datalist>
       <button id="add">Add to chain</button>
     </div>

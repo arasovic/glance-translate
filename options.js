@@ -29,7 +29,7 @@ $('saveKey').addEventListener('click', async () => {
   const key = $('key').value.trim();
   if (!key) return keyStatus('Enter a key first.', 'err');
   await save({ openrouterKey: key });
-  keyStatus('chain' in await stored() ? 'Key saved.' : 'Key saved. AI Models now lead the Fallback Chain.', 'ok');
+  keyStatus('chain' in await stored() ? 'Key saved.' : 'Key saved. AI Models now back up the keyless Providers in the Fallback Chain.', 'ok');
   renderChain();
 });
 $('deleteKey').addEventListener('click', async () => {
@@ -119,7 +119,7 @@ $('add').addEventListener('click', async () => {
   if (!value) return $('entry').focus();
   const entry = KEYLESS.find(e => e === value.toLowerCase() || core.entryLabel(e).toLowerCase() === value.toLowerCase())
     ?? core.OR_PREFIX + value;
-  if (/\s/.test(value) && !KEYLESS.includes(entry)) return ($('modelStatus').textContent = 'A Model id has no spaces, for example google/gemma-4-31b-it:free.');
+  if (/\s/.test(value) && !KEYLESS.includes(entry)) return ($('modelStatus').textContent = 'A Model id has no spaces, for example nvidia/nemotron-3-super-120b-a12b:free.');
   if (s.chain.includes(entry)) return ($('modelStatus').textContent = `${core.entryLabel(entry)} is already in the chain.`);
   await save({ chain: [...s.chain, entry] });
   $('entry').value = '';

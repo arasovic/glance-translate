@@ -68,7 +68,8 @@ export async function applySecondLanguage(translate, text, pick) {
 export const OR_PREFIX = 'openrouter:';
 export const FREE_ROUTER = 'openrouter/free';
 export const KEYLESS_CHAIN = ['chrome', 'microsoft', 'google'];
-export const KEY_CHAIN = [OR_PREFIX + 'google/gemma-4-31b-it:free', OR_PREFIX + FREE_ROUTER, ...KEYLESS_CHAIN];
+// Keyless Providers lead even with a key: in live tests they were faster and better in Turkish than the Free Models.
+export const KEY_CHAIN = [...KEYLESS_CHAIN, OR_PREFIX + 'nvidia/nemotron-3-super-120b-a12b:free', OR_PREFIX + 'dots-studio/dots-3-note-preview:free'];
 export const defaultChain = hasKey => (hasKey ? KEY_CHAIN : KEYLESS_CHAIN);
 export const isModel = entry => entry.startsWith(OR_PREFIX);
 export const modelOf = entry => entry.slice(OR_PREFIX.length);
