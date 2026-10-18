@@ -27,6 +27,14 @@ test('languages: Target and Second Language defaults', () => {
   assert.deepEqual(core.defaultLanguages([]), { target: 'en', second: '' });
 });
 
+test('languages: every language has a name, the list is in name order', () => {
+  const list = core.languageList();
+  assert.equal(list.length, core.LANGS.length);
+  for (const [code, name] of list) assert.ok(name !== code && !name.startsWith(`${code} `), `${code} has no name`);
+  assert.deepEqual(list.map(([, n]) => n), list.map(([, n]) => n).sort((a, b) => a.localeCompare(b, 'en')));
+  assert.equal(core.languageName('ty'), 'Tahitian');
+});
+
 test('selection: ignores text without letters, rejects long text', () => {
   assert.equal(core.checkSelection('  12.5, 3 '), 'ignore');
   assert.equal(core.checkSelection('!!!'), 'ignore');

@@ -202,7 +202,7 @@ async function models(all) {
 // Content scripts may only translate and open the options page. Key handling stays with extension pages.
 const handlers = {
   translate,
-  languages: () => core.LANGS.map(code => [code, core.languageName(code)]),
+  languages: () => core.languageList(),
   openOptions: ({ hash = '' }) => chrome.tabs.create({ url: chrome.runtime.getURL(`options.html${hash}`) }).then(() => ({})),
 };
 const extensionHandlers = {

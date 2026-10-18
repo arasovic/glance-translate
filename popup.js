@@ -7,7 +7,7 @@ const save = values => chrome.storage.local.set(values);
 $('enabled').checked = s.enabled;
 $('enabled').addEventListener('change', e => save({ enabled: e.target.checked }));
 
-for (const code of core.LANGS) $('target').append(new Option(core.languageName(code), code, false, code === s.target));
+for (const [code, name] of core.languageList()) $('target').append(new Option(name, code, false, code === s.target));
 $('target').addEventListener('change', async e => {
   await save({ target: e.target.value });
   if ($('text').value.trim()) translate();

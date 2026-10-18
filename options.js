@@ -137,7 +137,7 @@ $('resetChain').addEventListener('click', async () => {
 const fillLangs = (select, value, none) => {
   select.textContent = '';
   if (none) select.append(new Option(none, ''));
-  for (const code of core.LANGS) select.append(new Option(core.languageName(code), code));
+  for (const [code, name] of core.languageList()) select.append(new Option(name, code));
   select.value = value;
 };
 fillLangs($('target'), s.target);

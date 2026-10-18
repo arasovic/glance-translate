@@ -26,9 +26,13 @@ export function canonical(code, provider) {
 export const sameLanguage = (a, b) => !!a && !!b && canonical(a).split('-')[0] === canonical(b).split('-')[0];
 
 const names = new Intl.DisplayNames(['en'], { type: 'language' });
-export const languageName = code => {
-  try { return names.of(code === 'zh' ? 'zh-Hans' : code); } catch { return code; }
-};
+// Chrome's ICU data has no English name for some of these (checked on Chrome 155); kmr is only "Kurdish" there.
+const NAMES = { zh: 'Simplified Chinese', ba: 'Bashkir', bo: 'Tibetan', fj: 'Fijian', iu: 'Inuktitut', 'iu-Latn': 'Inuktitut (Latin)', kmr: 'Northern Kurdish', rn: 'Rundi', ty: 'Tahitian', yua: 'Yucatec Maya' };
+export function languageName(code) {
+  if (NAMES[code]) return NAMES[code];
+  try { return names.of(code); } catch { return code; }
+}
+export const languageList = () => LANGS.map(code => [code, languageName(code)]).sort((a, b) => a[1].localeCompare(b[1], 'en'));
 
 export function defaultLanguages(navLangs = []) {
   const codes = navLangs.map(l => canonical(l)).filter(l => LANGS.includes(l));
