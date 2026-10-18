@@ -71,18 +71,22 @@ $('text').addEventListener('keydown', e => {
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) translate();
 });
 
-// "Disable on this site" needs the page's host name, which only our content script can tell
+// "Don't show on this site" needs the page's host name, which only our content script can tell
 // (no "tabs" permission). Pages without the content script get no button.
 const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 const site = tab && await chrome.tabs.sendMessage(tab.id, { type: 'host' }, { frameId: 0 }).then(r => r?.host, () => null);
 if (site) {
-  const label = () => (s.disabledSites.includes(site) ? `Turn on for ${site}` : `Disable on ${site}`);
+  const label = () => {
+    const off = s.disabledSites.includes(site);
+    $('site').textContent = off ? `Show on ${site}` : `Don't show on ${site}`;
+    $('site').title = off ? 'Show the Trigger Icon and instant translation here again.' : 'Hide the Trigger Icon and instant translation here. The shortcut and right-click still translate.';
+  };
   $('site').hidden = false;
-  $('site').textContent = label();
+  label();
   $('site').addEventListener('click', async () => {
     s.disabledSites = s.disabledSites.includes(site) ? s.disabledSites.filter(h => h !== site) : [...s.disabledSites, site];
     await save({ disabledSites: s.disabledSites });
-    $('site').textContent = label();
+    label();
   });
 }
 
