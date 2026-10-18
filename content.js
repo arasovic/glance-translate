@@ -36,9 +36,9 @@
     .icon { position: absolute; width: 26px; height: 26px; border-radius: 7px; background: var(--acc); color: var(--on-acc);
             display: grid; place-items: center; box-shadow: 0 2px 8px rgb(20 30 80 / .3); }
     .card { position: absolute; width: 340px; max-width: calc(100vw - 16px); background: var(--bg); border: 1px solid var(--line);
-            border-radius: 10px; box-shadow: 0 6px 24px rgb(15 20 35 / .14); }
+            border-radius: 10px; box-shadow: 0 6px 24px rgb(15 20 35 / .14); max-height: calc(100vh - 16px); overflow: auto; }
     .card:focus-visible { outline-offset: -1px; }
-    .hd { display: flex; align-items: center; gap: 4px; padding: 8px 8px 0 14px; font-size: 12.5px; color: var(--mut); }
+    .hd { display: flex; align-items: center; gap: 4px; padding: 8px 8px 0 14px; font-size: 12.5px; color: var(--mut); cursor: move; user-select: none; touch-action: none; }
     .hd select { font: inherit; color: var(--fg); background: transparent; border: 0; border-radius: 5px; padding: 2px 2px; max-width: 170px; field-sizing: content; cursor: pointer; }
     .hd select:hover { background: var(--soft); }
     .hd select option { color: initial; background: initial; }
@@ -63,7 +63,7 @@
     @media (prefers-reduced-motion: reduce) { .busy i { animation: none; opacity: .7; } }
   `;
 
-  let host, root, icon, card, last, langs, dwell;
+  let host, root, icon, card, last, langs, dwell, moved;
 
   function ensureHost() {
     if (!host) {
@@ -80,6 +80,7 @@
       icon.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') dwell = setTimeout(() => icon.click(), 200); });
       icon.addEventListener('pointerleave', () => clearTimeout(dwell));
       card.addEventListener('keydown', e => e.key === 'Escape' && closeAll());
+      card.addEventListener('pointerdown', dragCard);
     }
     if (!host.isConnected) document.documentElement.append(host);
   }
@@ -87,6 +88,7 @@
   const hideIcon = () => { clearTimeout(dwell); if (icon) icon.hidden = true; };
   function closeAll() {
     hideIcon();
+    moved = false;
     if (card) { card.hidden = true; card.textContent = ''; }
     speechSynthesis.cancel();
   }
@@ -140,12 +142,29 @@
   }
 
   function placeCard(box) {
+    if (moved) return;
     const w = card.offsetWidth, h = card.offsetHeight;
     const x = Math.max(8, Math.min(box.left, innerWidth - w - 8));
-    const below = box.bottom + 8;
-    const y = below + h > innerHeight - 8 && box.top - h - 8 > 8 ? box.top - h - 8 : below;
+    const below = box.bottom + 8, above = box.top - h - 8;
+    // Below the Selection, else above it, else as low as fits so no part is off screen.
+    const y = below + h <= innerHeight - 8 ? below : above >= 8 ? above : Math.max(8, innerHeight - h - 8);
     card.style.left = `${x + scrollX}px`;
     card.style.top = `${y + scrollY}px`;
+  }
+
+  // Dragging the header moves the card; it stays there until it closes.
+  function dragCard(e) {
+    if (e.button !== 0 || !e.target.closest('.hd') || e.target.closest('button, select')) return;
+    e.preventDefault();
+    const r = card.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;
+    const move = m => {
+      moved = true;
+      card.style.left = `${Math.max(0, Math.min(m.clientX - dx, innerWidth - r.width)) + scrollX}px`;
+      card.style.top = `${Math.max(0, Math.min(m.clientY - dy, innerHeight - 40)) + scrollY}px`;
+    };
+    card.setPointerCapture(e.pointerId);
+    card.addEventListener('pointermove', move);
+    card.addEventListener('lostpointercapture', () => card.removeEventListener('pointermove', move), { once: true });
   }
 
   const el = (tag, props = {}, ...kids) => {
@@ -158,6 +177,7 @@
 
   async function translateSelection(sel, { entry, keyboard } = {}) {
     if (!sel) return;
+    if (sel !== last) moved = false;
     last = sel;
     ensureHost();
     hideIcon();
