@@ -19,6 +19,8 @@
   /* A long host name is cut with an ellipsis; the tooltip has it in full. */
   #site { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
   footer .ghost { margin-left: auto; flex: none; }
+  /* The language list cannot leave the popup window, so the popup grows while the list is open (600 px is Chrome's limit). */
+  body:has(select:open) { min-height: 600px; }
 </style>
 </head>
 <body>

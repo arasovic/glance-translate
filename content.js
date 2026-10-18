@@ -48,7 +48,7 @@
     select, select::picker(select) { appearance: base-select; }
     select::picker-icon { content: ""; width: 5px; height: 5px; margin: 0 2px 0 auto; border: solid var(--mut); border-width: 0 1.5px 1.5px 0; translate: 0 -2px; rotate: 45deg; }
     select:open::picker-icon { translate: 0 2px; rotate: 225deg; }
-    select::picker(select) { max-height: 280px; margin-block: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 8px;
+    select::picker(select) { max-height: 440px; margin-block: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 8px;
                              background: var(--bg); color: var(--fg); font-size: 13px; box-shadow: 0 6px 24px rgb(15 20 35 / .14);
                              scrollbar-width: thin; scrollbar-color: var(--mut) transparent; }
     option { padding: 4px 8px; border-radius: 5px; }
