@@ -18,6 +18,19 @@ input[type=text], input[type=password], input:not([type]), select, textarea {
   background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 6px 10px;
 }
 input:focus, select:focus, textarea:focus { outline: none; border-color: var(--acc); }
+/* Chrome 135+ draws the list inside the page: it gets this look and a capped height instead of a screen-tall
+   native menu. Older Chromium ignores base-select and keeps the native menu. */
+select, select::picker(select) { appearance: base-select; }
+select { cursor: pointer; align-items: center; }
+select::picker-icon { content: ""; width: 5px; height: 5px; margin: 0 2px 0 auto; border: solid var(--mut); border-width: 0 1.5px 1.5px 0; translate: 0 -2px; rotate: 45deg; }
+select:open::picker-icon { translate: 0 2px; rotate: 225deg; }
+select::picker(select) { max-height: 280px; margin-block: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 8px;
+                         background: var(--bg); color: var(--fg); font-size: 13px; box-shadow: 0 6px 24px rgb(15 20 35 / .14);
+                         scrollbar-width: thin; scrollbar-color: var(--mut) transparent; }
+option { padding: 4px 8px; border-radius: 5px; }
+option:hover, option:focus-visible { outline: none; background: var(--soft); color: var(--acc); }
+option:checked { font-weight: 600; }
+option::checkmark { color: var(--acc); }
 button { cursor: pointer; border-radius: 7px; padding: 6px 12px; border: 1px solid var(--line); background: var(--bg); }
 button:hover { border-color: var(--acc); color: var(--acc); }
 button.primary { background: var(--acc); border-color: var(--acc); color: var(--on-acc); font-weight: 600; }

@@ -40,11 +40,21 @@
             border-radius: 10px; box-shadow: 0 6px 24px rgb(15 20 35 / .14); max-height: calc(100vh - 16px); overflow: auto; }
     .card:focus-visible { outline-offset: -1px; }
     .hd { display: flex; align-items: center; gap: 4px; padding: 8px 8px 0 14px; font-size: 12.5px; color: var(--mut); cursor: move; user-select: none; touch-action: none; }
-    .hd select { font: inherit; color: var(--fg); background: transparent; border: 0; border-radius: 5px; padding: 2px 2px; min-width: 0; max-width: 170px; field-sizing: content; cursor: pointer; text-overflow: ellipsis; }
-    /* The Source Language name wraps first; the Target select is cut only when that is not enough. */
+    .hd select { font: inherit; color: var(--fg); background: transparent; border: 0; border-radius: 5px; padding: 2px 2px; min-width: 0; max-width: 170px; field-sizing: content; cursor: pointer; text-overflow: ellipsis; align-items: center; }
+    /* The Source Language name wraps first; the Target select wraps only when that is not enough. */
     .hd > span { flex-shrink: 1000; }
     .hd select:hover { background: var(--soft); }
-    .hd select option { color: initial; background: initial; }
+    /* Chrome 135+ draws the list inside the card's look with a capped height instead of a screen-tall native menu. */
+    select, select::picker(select) { appearance: base-select; }
+    select::picker-icon { content: ""; width: 5px; height: 5px; margin: 0 2px 0 auto; border: solid var(--mut); border-width: 0 1.5px 1.5px 0; translate: 0 -2px; rotate: 45deg; }
+    select:open::picker-icon { translate: 0 2px; rotate: 225deg; }
+    select::picker(select) { max-height: 280px; margin-block: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 8px;
+                             background: var(--bg); color: var(--fg); font-size: 13px; box-shadow: 0 6px 24px rgb(15 20 35 / .14);
+                             scrollbar-width: thin; scrollbar-color: var(--mut) transparent; }
+    option { padding: 4px 8px; border-radius: 5px; }
+    option:hover, option:focus-visible { outline: none; background: var(--soft); color: var(--acc); }
+    option:checked { font-weight: 600; }
+    option::checkmark { color: var(--acc); }
     .acts { margin-left: auto; display: flex; gap: 2px; flex: none; }
     .ib { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 6px; color: var(--mut); }
     .ib:hover, .ib[aria-expanded="true"] { background: var(--soft); color: var(--acc); }
@@ -82,7 +92,7 @@
       // Resting the mouse on the icon also starts the translation; a pass across it does not.
       icon.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') dwell = setTimeout(() => icon.click(), 200); });
       icon.addEventListener('pointerleave', () => clearTimeout(dwell));
-      card.addEventListener('keydown', e => e.key === 'Escape' && closeAll());
+      card.addEventListener('keydown', e => e.key === 'Escape' && !picking() && closeAll());
       card.addEventListener('pointerdown', dragCard);
     }
     if (!host.isConnected) document.documentElement.append(host);
@@ -335,7 +345,9 @@
   const inHost = e => host && e.composedPath().includes(host);
 
   document.addEventListener('mousedown', e => { if (!inHost(e)) closeAll(); }, true);
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && card && !card.hidden) closeAll(); }, true);
+  // Esc in an open language list closes only the list.
+  const picking = () => !!root?.querySelector('select:open');
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && card && !card.hidden && !picking()) closeAll(); }, true);
   addEventListener('scroll', hideIcon, { passive: true, capture: true });
 
   document.addEventListener('mouseup', e => {
