@@ -24,6 +24,8 @@ button.primary { background: var(--acc); border-color: var(--acc); color: var(--
 button.primary:hover { color: var(--on-acc); filter: brightness(1.08); }
 button.plain { border: 0; background: none; padding: 2px 4px; color: var(--mut); }
 button.plain:hover { color: var(--acc); }
+button.ghost { border-color: transparent; background: none; color: var(--mut); }
+button.ghost:hover { border-color: transparent; background: var(--soft); color: var(--acc); }
 a, .link { color: var(--acc); }
 .link { border: 0; background: none; padding: 0; text-decoration: underline; text-underline-offset: 2px; }
 .muted { color: var(--mut); }

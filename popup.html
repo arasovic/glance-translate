@@ -15,7 +15,8 @@
   .row select { max-width: 170px; padding: 3px 6px; field-sizing: content; }
   .row .primary { margin-left: auto; }
   footer { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--line); padding: 8px 12px 10px; font-size: 12.5px; }
-  footer .plain:last-child { margin-left: auto; }
+  footer button { padding: 4px 10px; }
+  footer .ghost { margin-left: auto; }
 </style>
 </head>
 <body>
@@ -31,8 +32,8 @@
   <button class="primary" id="go" title="Ctrl+Enter">Translate</button>
 </div>
 <footer>
-  <button class="plain" id="site" hidden></button>
-  <button class="plain" id="options">Options</button>
+  <button id="site" hidden></button>
+  <button class="ghost" id="options">Options</button>
 </footer>
 <script type="module" src="popup.js"></script>
 </body>
