@@ -7,10 +7,39 @@ const save = values => chrome.storage.local.set(values);
 $('enabled').checked = s.enabled;
 $('enabled').addEventListener('change', e => save({ enabled: e.target.checked }));
 
-for (const [code, name] of core.languageList()) $('target').append(new Option(name, code, false, code === s.target));
-$('target').addEventListener('change', async e => {
-  await save({ target: e.target.value });
-  if ($('text').value.trim()) translate();
+const showTarget = () => {
+  $('target').textContent = core.languageName(s.target);
+  $('target').setAttribute('aria-label', `Target Language: ${core.languageName(s.target)}`);
+};
+showTarget();
+// The language panel covers the popup instead of opening below the button: the popup window is too short for a list.
+$('target').addEventListener('click', () => {
+  const sheet = document.createElement('div');
+  sheet.className = 'sheet';
+  sheet.setAttribute('role', 'dialog');
+  sheet.setAttribute('aria-label', 'Translate to');
+  sheet.innerHTML = `<div class="sheet-hd"><button class="plain" title="Back" aria-label="Back"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3.5L5.5 8l4.5 4.5"/></svg></button><h2>Translate to</h2></div>`;
+  const close = () => {
+    sheet.remove();
+    $('main').inert = false;
+    $('target').setAttribute('aria-expanded', 'false');
+    $('target').focus();
+  };
+  sheet.querySelector('button').addEventListener('click', close);
+  sheet.append(languagePanel({
+    list: core.languageList(), value: s.target, pinned: [s.target, s.second], label: 'Target Language', onClose: close,
+    onPick: async code => {
+      close();
+      if (code === s.target) return;
+      s.target = code;
+      showTarget();
+      await save({ target: code });
+      if ($('text').value.trim()) translate();
+    },
+  }));
+  $('main').inert = true;
+  $('target').setAttribute('aria-expanded', 'true');
+  document.body.append(sheet);
 });
 
 $('options').addEventListener('click', () => chrome.runtime.openOptionsPage());

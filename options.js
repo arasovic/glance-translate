@@ -134,16 +134,45 @@ $('resetChain').addEventListener('click', async () => {
 
 // ---- Languages ----
 
-const fillLangs = (select, value, none) => {
-  select.textContent = '';
-  if (none) select.append(new Option(none, ''));
-  for (const [code, name] of core.languageList()) select.append(new Option(name, code));
-  select.value = value;
+const langList = core.languageList();
+const showLang = (button, code) => {
+  const name = code ? core.languageName(code) : 'None';
+  button.value = code;
+  button.textContent = name;
+  button.setAttribute('aria-label', `${button.dataset.label}: ${name}`);
 };
-fillLangs($('target'), s.target);
-fillLangs($('second'), s.second, 'None');
-$('target').addEventListener('change', async e => { await save({ target: e.target.value }); renderPacks(); });
-$('second').addEventListener('change', e => save({ second: e.target.value }));
+// The button opens the language panel as a popover below it, or above it when there is more room there.
+function langPicker(button, value, onPick, none) {
+  showLang(button, value);
+  const pop = el('div', { className: 'lp-pop', popover: 'auto' });
+  button.popoverTargetElement = pop;
+  button.setAttribute('aria-haspopup', 'listbox');
+  const place = () => {
+    const r = button.getBoundingClientRect(), below = innerHeight - r.bottom - 12, above = r.top - 12;
+    const up = below < 320 && above > below;
+    pop.style.maxHeight = `${Math.min(380, up ? above : below)}px`;
+    pop.style.left = `${Math.max(8, Math.min(r.left, innerWidth - pop.offsetWidth - 8))}px`;
+    pop.style.top = up ? '' : `${r.bottom + 4}px`;
+    pop.style.bottom = up ? `${innerHeight - r.top + 4}px` : '';
+  };
+  const close = () => { pop.hidePopover(); button.focus(); };
+  pop.addEventListener('beforetoggle', e => {
+    if (e.newState !== 'open') return;
+    pop.replaceChildren(languagePanel({
+      list: langList, value: button.value, pinned: [s.target, s.second], none, label: button.dataset.label, onClose: close,
+      onPick: code => { close(); if (code !== button.value) { showLang(button, code); onPick(code); } },
+    }));
+  });
+  pop.addEventListener('toggle', e => {
+    const open = e.newState === 'open';
+    button.setAttribute('aria-expanded', String(open));
+    for (const type of ['scroll', 'resize']) open ? addEventListener(type, place, true) : removeEventListener(type, place, true);
+    if (open) place(); else pop.textContent = '';
+  });
+  document.body.append(pop);
+}
+langPicker($('target'), s.target, async code => { await save({ target: code }); renderPacks(); });
+langPicker($('second'), s.second, code => save({ second: code }), 'None');
 
 // ---- Trigger ----
 
@@ -217,8 +246,8 @@ async function download(from, to, button, status) {
   }
 }
 
-fillLangs($('packFrom'), 'en');
-fillLangs($('packTo'), s.target);
+langPicker($('packFrom'), 'en', () => {});
+langPicker($('packTo'), s.target, () => {});
 $('addPack').addEventListener('click', () => {
   extraPairs.push([$('packFrom').value, $('packTo').value]);
   renderPacks(`${$('packFrom').value}:${$('packTo').value}`);
@@ -243,7 +272,7 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
   if (area !== 'local') return;
   s = core.withDefaults(await stored(), navigator.languages);
   if (changes.disabledSites) renderSites();
-  if (changes.target) $('target').value = s.target;
+  if (changes.target) showLang($('target'), s.target);
 });
 
 // ---- Debug ----

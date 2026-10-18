@@ -17,7 +17,11 @@
   .line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
   .line input:not([type=checkbox]) { flex: 1 1 220px; min-width: 0; }
   .field { display: grid; gap: 4px; margin-bottom: 12px; font-size: 13px; }
-  .field select { max-width: 280px; }
+  .field .lang { max-width: 280px; }
+  .lp-pop { inset: auto; margin: 0; padding: 0; width: 280px; border: 1px solid var(--line); border-radius: 10px;
+            background: var(--bg); color: var(--fg); box-shadow: 0 12px 32px rgb(15 20 35 / .16), 0 2px 6px rgb(15 20 35 / .06); overflow: hidden; }
+  .lp-pop:popover-open { display: flex; flex-direction: column; }
+  .lp-pop .lp { flex: 1; }
   .rows { list-style: none; margin: 0 0 12px; padding: 0; }
   .rows li { display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 12px; border: 1px solid var(--line); border-bottom-width: 0; font-size: 13.5px; min-height: 40px; }
   .rows li:first-child { border-radius: 8px 8px 0 0; }
@@ -73,8 +77,8 @@
 
   <section id="languages">
     <h2>Languages</h2>
-    <label class="field">Target Language <select id="target"></select></label>
-    <label class="field">Second Language <select id="second"></select></label>
+    <label class="field">Target Language <button class="lang" id="target" data-label="Target Language"></button></label>
+    <label class="field">Second Language <button class="lang" id="second" data-label="Second Language"></button></label>
     <p class="d">A Selection already in the Target Language is translated into the Second Language.</p>
   </section>
 
@@ -96,7 +100,7 @@
     <p class="err" id="noTranslator" hidden>This browser has no on-device Translator, so the Chrome on-device entry is always skipped.</p>
     <ul class="rows" id="packList"></ul>
     <div class="line">
-      <select id="packFrom" aria-label="From"></select> to <select id="packTo" aria-label="To"></select>
+      <button class="lang" id="packFrom" data-label="From"></button> to <button class="lang" id="packTo" data-label="To"></button>
       <button id="addPack">Add pair</button>
     </div>
   </section>
@@ -114,6 +118,7 @@
     <label><input type="checkbox" id="debugLog"> Log how long each translation step takes</label>
   </section>
 </main>
+<script src="lang-panel.js"></script>
 <script type="module" src="options.js"></script>
 </body>
 </html>

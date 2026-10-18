@@ -12,18 +12,25 @@
   textarea { display: block; width: calc(100% - 24px); margin: 0 12px; height: 76px; resize: vertical; }
   .result { margin: 8px 12px 0; }
   .row { display: flex; align-items: center; gap: 8px; padding: 10px 12px 12px; font-size: 12.5px; }
-  .row select { max-width: 170px; padding: 3px 6px; field-sizing: content; }
+  .row .lang { max-width: 170px; padding: 3px 6px; }
   .row .primary { margin-left: auto; }
   footer { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--line); padding: 8px 12px 10px; font-size: 12.5px; }
   footer button { padding: 4px 10px; }
   /* A long host name is cut with an ellipsis; the tooltip has it in full. */
   #site { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
   footer .ghost { margin-left: auto; flex: none; }
-  /* The language list cannot leave the popup window, so the popup grows while the list is open (600 px is Chrome's limit). */
-  body:has(select:open) { min-height: 600px; }
+  /* The language panel covers the popup; the popup is at least this tall while it is open. */
+  body:has(.sheet) { min-height: 360px; }
+  .sheet { position: fixed; inset: 0; display: flex; flex-direction: column; background: var(--bg); }
+  .sheet-hd { display: flex; align-items: center; gap: 4px; padding: 8px 12px 0 6px; }
+  .sheet-hd h2 { margin: 0; font-size: 13px; font-weight: 600; }
+  .sheet-hd .plain { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border-radius: 6px; }
+  .sheet .lp { flex: 1; }
+  .sheet .lp-search { border-bottom: 0; padding-bottom: 4px; }
 </style>
 </head>
 <body>
+<div id="main">
 <header>
   <h1>Select Translate</h1>
   <label>On <input type="checkbox" class="switch" id="enabled" role="switch" aria-label="Selection Translation on web pages"></label>
@@ -32,13 +39,15 @@
 <div class="result" id="result" aria-live="polite" hidden></div>
 <div class="row">
   <label for="target" class="muted">To</label>
-  <select id="target"></select>
+  <button class="lang" id="target" aria-haspopup="listbox" aria-expanded="false"></button>
   <button class="primary" id="go" title="Ctrl+Enter">Translate</button>
 </div>
 <footer>
   <button id="site" hidden></button>
   <button class="ghost" id="options">Options</button>
 </footer>
+</div>
+<script src="lang-panel.js"></script>
 <script type="module" src="popup.js"></script>
 </body>
 </html>

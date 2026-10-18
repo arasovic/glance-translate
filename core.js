@@ -32,7 +32,16 @@ export function languageName(code) {
   if (NAMES[code]) return NAMES[code];
   try { return names.of(code); } catch { return code; }
 }
-export const languageList = () => LANGS.map(code => [code, languageName(code)]).sort((a, b) => a[1].localeCompare(b[1], 'en'));
+// The language's name in itself ("Deutsch"), or '' when ICU has no data for it or it equals the English name.
+export function nativeName(code) {
+  try {
+    const names = new Intl.DisplayNames([code], { type: 'language', fallback: 'none' });
+    if (names.resolvedOptions().locale.split('-')[0] !== code.split('-')[0]) return '';
+    const own = names.of(code === 'zh' ? 'zh-Hans' : code) ?? '';
+    return own.toLowerCase() === languageName(code).toLowerCase() ? '' : own;
+  } catch { return ''; }
+}
+export const languageList = () => LANGS.map(code => [code, languageName(code), nativeName(code)]).sort((a, b) => a[1].localeCompare(b[1], 'en'));
 
 export function defaultLanguages(navLangs = []) {
   const codes = navLangs.map(l => canonical(l)).filter(l => LANGS.includes(l));

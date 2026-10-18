@@ -35,6 +35,13 @@ test('languages: every language has a name, the list is in name order', () => {
   assert.equal(core.languageName('ty'), 'Tahitian');
 });
 
+test('languages: own names, empty when ICU has none or it equals the English name', () => {
+  assert.equal(core.nativeName('de'), 'Deutsch');
+  assert.equal(core.nativeName('tr'), 'Türkçe');
+  assert.equal(core.nativeName('en'), '');
+  assert.equal(core.nativeName('yua'), '');
+});
+
 test('selection: ignores text without letters, rejects long text', () => {
   assert.equal(core.checkSelection('  12.5, 3 '), 'ignore');
   assert.equal(core.checkSelection('!!!'), 'ignore');
