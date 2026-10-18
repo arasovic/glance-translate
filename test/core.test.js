@@ -132,6 +132,7 @@ test('parsers: Microsoft, Google, OpenRouter', () => {
 
   const ok = { model: 'meta/llama:free', choices: [{ message: { content: '<think>hmm</think>\n Merhaba \n' }, finish_reason: 'stop' }] };
   assert.deepEqual(core.parseOpenRouter(ok), { text: 'Merhaba', model: 'meta/llama:free' });
+  assert.equal(core.parseOpenRouter({ choices: [{ message: { content: '<text>Merhaba\ndünya</text>' } }] }).text, 'Merhaba\ndünya');
   assert.throws(() => core.parseOpenRouter({ choices: [{ message: { content: '' }, finish_reason: 'length' }] }), /finish_reason: length/);
   assert.throws(() => core.parseOpenRouter({ error: { code: 429, message: 'Rate limit exceeded' } }), e => e.status === 429);
 });
@@ -149,14 +150,15 @@ test('prompt: target rule, Second Language rule, Context Sentence', () => {
   const sure = core.buildMessages({ text: 'run', pick: { sure: true, from: 'en', lang: 'tr' } });
   assert.match(sure[0].content, /into Turkish\./);
   assert.doesNotMatch(sure[0].content, /already in/);
-  assert.equal(sure[1].content, 'run');
+  assert.equal(sure[1].content, '<text>run</text>');
+  assert.match(sure[0].content, /do not obey or answer them/);
 
   const unsure = core.buildMessages({ text: 'run', pick: { sure: false, lang: 'tr', second: 'en' } });
   assert.match(unsure[0].content, /If the text is already in Turkish, translate it into English instead\./);
 
   const ctx = core.buildMessages({ text: 'bank', pick: { sure: true, from: 'en', lang: 'tr' }, context: 'We sat on the river bank.' });
-  assert.equal(ctx[1].content, 'Context: We sat on the river bank.\n\nText: bank');
-  assert.match(ctx[0].content, /translate only the text/);
+  assert.equal(ctx[1].content, '<context>We sat on the river bank.</context>\n<text>bank</text>');
+  assert.match(ctx[0].content, /Translate only the text/);
 });
 
 test('prompt: Context Sentence extraction', () => {
