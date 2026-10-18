@@ -33,12 +33,12 @@ async function getSettings() {
 
 // ---- Providers ----
 
-async function fetchJson(url, init = {}) {
+async function fetchJson(url, init = {}, timeout = TIMEOUT_MS) {
   let res;
   try {
-    res = await fetch(url, { ...init, signal: AbortSignal.timeout(TIMEOUT_MS) });
+    res = await fetch(url, { ...init, signal: AbortSignal.timeout(timeout) });
   } catch (e) {
-    throw new Error(e.name === 'TimeoutError' ? `No answer within ${TIMEOUT_MS / 1000} s` : e.message);
+    throw new Error(e.name === 'TimeoutError' ? `No answer within ${timeout / 1000} s` : e.message);
   }
   const body = await res.text();
   if (!res.ok) throw core.httpError(res.status, body, Object.fromEntries(res.headers));
@@ -98,7 +98,7 @@ async function openRouter(model, { text, pick, context, key }) {
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', 'X-OpenRouter-Title': 'Select Translate' },
     body: JSON.stringify(core.openRouterBody(model, messages, text.length, reasoning)),
-  });
+  }, Math.min(TIMEOUT_MS, 10_000 + text.length * 10)); // Free Models stall for 15–30 s at times; move on sooner on short text.
   let json;
   try {
     json = await send(true);
@@ -124,16 +124,20 @@ async function callEntry(entry, ctx) {
   }
 }
 
+// The header-based Cooldown is saved at once so the chain moves on; the daily-limit lookup refines it afterwards.
 async function startCooldown(entry, headers, key) {
   const now = Date.now();
-  let freeDailyRemaining;
+  await saveCooldown(entry, core.cooldownUntil({ entry, headers, now }));
   if (core.isModel(entry) && ![20, 50, 1000].includes(Number(headers['x-ratelimit-limit']))) {
-    freeDailyRemaining = await keyInfo(key).then(k => k?.free_model_daily_requests?.remaining, () => undefined);
+    keyInfo(key).then(k => k?.free_model_daily_requests?.remaining === 0 && saveCooldown(entry, core.nextUtcMidnight(now)), () => {});
   }
+}
+
+async function saveCooldown(entry, until) {
+  const now = Date.now();
   const { cooldowns = {} } = await chrome.storage.local.get('cooldowns');
-  const live = Object.fromEntries(Object.entries(cooldowns).filter(([, until]) => until > now));
-  live[entry] = core.cooldownUntil({ entry, headers, now, freeDailyRemaining });
-  await chrome.storage.local.set({ cooldowns: live });
+  const live = Object.fromEntries(Object.entries(cooldowns).filter(([, t]) => t > now));
+  await chrome.storage.local.set({ cooldowns: { ...live, [entry]: until } });
 }
 
 // ---- Translation flow ----
