@@ -55,11 +55,17 @@ const google = async (text, lang) => core.parseGoogle(await fetchJson(
   { method: 'POST', body: new URLSearchParams({ q: text }) },
 ));
 
-let detector;
+let detector, downloading = false;
 async function detect(text) {
   if (!('LanguageDetector' in self)) return {};
   try {
-    detector ??= LanguageDetector.create();
+    if (!detector) {
+      downloading = await LanguageDetector.availability() !== 'available';
+      detector = LanguageDetector.create();
+      detector.then(() => { downloading = false; }, () => { detector = undefined; });
+    }
+    // The first create() in a profile downloads the model (about 12 s); translate without detection until it is there.
+    if (downloading) return { downloading: true };
     const [top] = await (await detector).detect(text);
     return { lang: top?.detectedLanguage, confidence: top?.confidence ?? 0 };
   } catch {
@@ -142,6 +148,20 @@ async function saveCooldown(entry, until) {
 
 // ---- Translation flow ----
 
+// Opt-in debug log (options page → Debug): step timings in this worker's console. Never the text or the key.
+async function timed(on, label, fn) {
+  const start = performance.now();
+  const ms = () => Math.round(performance.now() - start);
+  try {
+    const value = await fn();
+    if (on) console.info(`[Select Translate] ${label}: ${ms()} ms`);
+    return value;
+  } catch (e) {
+    if (on) console.info(`[Select Translate] ${label}: failed after ${ms()} ms (${e.message})`);
+    throw e;
+  }
+}
+
 async function cacheSet(key, value) {
   try {
     await chrome.storage.session.set({ [key]: value });
@@ -154,16 +174,26 @@ function answeredBy(entry, model) {
   return entry === core.OR_PREFIX + core.FREE_ROUTER && model ? `${model} (Free Router)` : core.entryLabel(entry);
 }
 
-async function translate({ text = '', block, start, end, entry }) {
+async function translate(msg) {
+  const s = await getSettings();
+  const res = await timed(s.debug, 'translation', () => translateWith(s, msg));
+  if (s.debug) {
+    const { text, ...rest } = res;
+    console.info('[Select Translate] result', { chars: msg.text?.trim().length, ...rest });
+  }
+  return res;
+}
+
+async function translateWith(s, { text = '', block, start, end, entry }) {
   text = text.trim();
   const check = core.checkSelection(text);
   if (check === 'ignore') return { error: 'There is no text to translate.' };
   if (check === 'too-long') return { error: `The Selection is too long. The limit is ${core.MAX_CHARS.toLocaleString('en')} characters.` };
 
-  const s = await getSettings();
   const chain = s.chain.map(e => ({ entry: e, label: core.entryLabel(e) }));
-  const det = await detect(text);
+  const det = await timed(s.debug, 'detect', () => detect(text));
   const pick = core.pickOutput({ detected: det.lang, confidence: det.confidence, target: s.target, second: s.second });
+  if (s.debug) console.info('[Select Translate] detection', det, pick);
   const base = { target: s.target, chain };
   if (pick.already) return { ...base, already: true, from: pick.from };
 
@@ -178,7 +208,7 @@ async function translate({ text = '', block, start, end, entry }) {
   const ctx = { text, pick, key: s.openrouterKey, context: block && core.wantsContext(text) ? core.contextSentence(block, start, end) : '' };
   const r = await core.walkChain(entry ? [entry] : s.chain, {
     skip: async e => core.skipReason(e, { now, cooldowns, hasKey: !!s.openrouterKey, sure: pick.sure, chrome: e === 'chrome' ? await chromeState(pick) : undefined }),
-    call: e => callEntry(e, ctx),
+    call: e => timed(s.debug, e, () => callEntry(e, ctx)),
   });
 
   const skipped = r.skipped.map(x => ({

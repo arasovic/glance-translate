@@ -149,6 +149,7 @@ $('second').addEventListener('change', e => save({ second: e.target.value }));
 
 document.querySelector(`input[name=mode][value=${s.triggerMode}]`).checked = true;
 document.querySelectorAll('input[name=mode]').forEach(r => r.addEventListener('change', () => save({ triggerMode: r.value })));
+
 const command = (await chrome.commands.getAll()).find(c => c.name === 'translate-selection');
 $('shortcut').textContent = command?.shortcut || 'Not set';
 $('shortcuts').addEventListener('click', () => chrome.tabs.create({ url: 'chrome://extensions/shortcuts' }));
@@ -244,6 +245,11 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
   if (changes.disabledSites) renderSites();
   if (changes.target) $('target').value = s.target;
 });
+
+// ---- Debug ----
+
+$('debugLog').checked = !!s.debug;
+$('debugLog').addEventListener('change', e => save({ debug: e.target.checked }));
 
 renderChain();
 renderSites();

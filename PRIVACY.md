@@ -25,12 +25,14 @@ Microsoft, Google, OpenRouter and the Model providers handle the text under thei
 
 | Data | Where | How long |
 |---|---|---|
-| Settings: Target and Second Language, Trigger Mode, Fallback Chain, Disabled Sites (host names), on/off switch | `chrome.storage.local` | Until you change them or remove the extension |
+| Settings: Target and Second Language, Trigger Mode, Fallback Chain, Disabled Sites (host names), on/off switch, debug log switch | `chrome.storage.local` | Until you change them or remove the extension |
 | OpenRouter API key | `chrome.storage.local`, never `chrome.storage.sync` | Until you delete it or remove the extension |
 | Cooldown end times per Fallback Chain entry | `chrome.storage.local` | Until they expire |
 | Translation cache: the Selection and its translation | `chrome.storage.session` | Until the browser closes |
 
 The API key is never logged and never reaches web pages: only the extension's background service worker uses it. Nothing is synced across devices.
+
+The debug log is off by default. When you turn it on in the options page, the service worker's console on your device shows how long each translation step took, the detected language and which entry answered. It never holds the Selection, the translation or the key, and it is not sent anywhere.
 
 ## Contact
 

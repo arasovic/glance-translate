@@ -107,6 +107,12 @@
     <ul class="rows" id="siteList"></ul>
     <p class="muted small" id="noSites">No Disabled Sites. Use "Don't show on this site" in the toolbar popup to add one.</p>
   </section>
+
+  <section id="debug">
+    <h2>Debug</h2>
+    <p class="d">To see the log, open chrome://extensions, find Select Translate and click "service worker", then open Console. The log never holds the selected text or your key.</p>
+    <label><input type="checkbox" id="debugLog"> Log how long each translation step takes</label>
+  </section>
 </main>
 <script type="module" src="options.js"></script>
 </body>
