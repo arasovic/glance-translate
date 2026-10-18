@@ -19,6 +19,7 @@
     copy: '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="1.5"/><path d="M3 10.5V3.5A1 1 0 0 1 4 2.5h6.5"/></svg>',
     done: '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"/></svg>',
     listen: '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 6v4h2.5L8.5 13V3L5 6z"/><path d="M11 5.5a3.5 3.5 0 0 1 0 5M12.8 3.6a6 6 0 0 1 0 8.8" stroke-linecap="round"/></svg>',
+    pause: '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M5.5 3.5v9M10.5 3.5v9"/></svg>',
     more: '<svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="3.5" cy="8" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="12.5" cy="8" r="1.3"/></svg>',
   };
 
@@ -219,6 +220,7 @@
   const nameOf = code => (Array.isArray(langs) && langs.find(([c]) => c === code)?.[1]) || code;
 
   function render(res) {
+    speechSynthesis.cancel();
     card.textContent = '';
     if (res.error) {
       card.append(el('div', { className: 'tx note', textContent: res.error }));
@@ -236,8 +238,7 @@
 
     if (res.text) {
       const copy = button('ib', 'Copy translation', ICONS.copy, () => copyText(res.text, copy));
-      const listen = button('ib', 'Listen', ICONS.listen, () => speak(res.text, res.lang));
-      acts.append(copy, listen);
+      acts.append(copy, listenButton(res.text, res.lang));
     }
     const others = (res.chain ?? []).filter(c => c.entry !== res.entry);
     if (others.length) {
@@ -306,13 +307,26 @@
     setTimeout(() => { b.innerHTML = ICONS.copy; b.setAttribute('aria-label', 'Copy translation'); }, 1200);
   }
 
+  // Listen starts from the top, then pauses and resumes. It checks speaking first:
+  // after cancel() during a pause, Chrome keeps speechSynthesis.paused true.
+  function listenButton(text, lang) {
+    const set = (svg, label) => { b.innerHTML = svg; b.title = label; b.setAttribute('aria-label', label); };
+    const b = button('ib', 'Listen', ICONS.listen, () => {
+      if (!speechSynthesis.speaking) { speak(text, lang, () => set(ICONS.listen, 'Listen')); set(ICONS.pause, 'Pause'); }
+      else if (speechSynthesis.paused) { speechSynthesis.resume(); set(ICONS.pause, 'Pause'); }
+      else { speechSynthesis.pause(); set(ICONS.listen, 'Resume'); }
+    });
+    return b;
+  }
+
   // Prefers a voice that runs on the device, so the text stays local when possible.
-  function speak(text, lang) {
+  function speak(text, lang, done) {
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = lang;
     const voices = speechSynthesis.getVoices().filter(v => v.lang.toLowerCase().startsWith(lang.split('-')[0].toLowerCase()));
     u.voice = voices.find(v => v.localService) ?? voices[0] ?? null;
+    u.onend = u.onerror = done;
     speechSynthesis.speak(u);
   }
 
