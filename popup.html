@@ -16,7 +16,9 @@
   .row .primary { margin-left: auto; }
   footer { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--line); padding: 8px 12px 10px; font-size: 12.5px; }
   footer button { padding: 4px 10px; }
-  footer .ghost { margin-left: auto; }
+  /* A long host name is cut with an ellipsis; the tooltip has it in full. */
+  #site { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  footer .ghost { margin-left: auto; flex: none; }
 </style>
 </head>
 <body>

@@ -79,7 +79,7 @@ if (site) {
   const label = () => {
     const off = s.disabledSites.includes(site);
     $('site').textContent = off ? `Show on ${site}` : `Don't show on ${site}`;
-    $('site').title = off ? 'Show the Trigger Icon and instant translation here again.' : 'Hide the Trigger Icon and instant translation here. The shortcut and right-click still translate.';
+    $('site').title = off ? `Show the Trigger Icon and instant translation on ${site} again.` : `Hide the Trigger Icon and instant translation on ${site}. The shortcut and right-click still translate.`;
   };
   $('site').hidden = false;
   label();
