@@ -1,0 +1,41 @@
+/* Shared look of the Toolbar Popup and the options page (direction "Quiet"). */
+:root {
+  color-scheme: light dark;
+  --acc: #2b50d8; --on-acc: #fff; --bg: #fff; --page: #f6f7f8; --fg: #1d1f23; --mut: #626975;
+  --line: #e3e5e9; --soft: #eef1fd; --ok: #1a7f37; --err: #b42318;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --acc: #8fa6ff; --on-acc: #14183a; --bg: #26282c; --page: #1b1c1f; --fg: #e8e9ec; --mut: #a2a7b0;
+          --line: #393c42; --soft: #2d3350; --ok: #6fdd8b; --err: #ff9b8f; }
+}
+* { box-sizing: border-box; }
+/* Set on body: Chrome's extension-page stylesheet sets body to 75%. */
+body { margin: 0; color: var(--fg); background: var(--page); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 2px solid var(--acc); outline-offset: 1px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+input[type=text], input[type=password], input:not([type]), select, textarea {
+  background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 6px 10px;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--acc); }
+button { cursor: pointer; border-radius: 7px; padding: 6px 12px; border: 1px solid var(--line); background: var(--bg); }
+button:hover { border-color: var(--acc); color: var(--acc); }
+button.primary { background: var(--acc); border-color: var(--acc); color: var(--on-acc); font-weight: 600; }
+button.primary:hover { color: var(--on-acc); filter: brightness(1.08); }
+button.plain { border: 0; background: none; padding: 2px 4px; color: var(--mut); }
+button.plain:hover { color: var(--acc); }
+a, .link { color: var(--acc); }
+.link { border: 0; background: none; padding: 0; text-decoration: underline; text-underline-offset: 2px; }
+.muted { color: var(--mut); }
+.small { font-size: 12.5px; }
+.ok { color: var(--ok); }
+.err { color: var(--err); }
+.switch { appearance: none; width: 34px; height: 20px; border-radius: 10px; background: var(--line); position: relative; cursor: pointer; margin: 0; flex: none; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: left .15s; }
+.switch:checked { background: var(--acc); }
+.switch:checked::after { left: 17px; }
+@media (prefers-reduced-motion: reduce) { .switch::after { transition: none; } }
+.result { padding: 8px 10px; border-radius: 8px; background: var(--soft); white-space: pre-wrap; overflow-wrap: anywhere; }
+.result .by { display: block; margin-top: 4px; font-size: 12px; color: var(--mut); white-space: normal; }
+.result .by b { color: var(--acc); font-weight: 600; }
+.result p { margin: 2px 0 0; }

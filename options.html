@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Select Translate options</title>
+<link rel="stylesheet" href="ui.css">
+<style>
+  main { max-width: 680px; margin: 0 auto; padding: 32px 16px 64px; }
+  header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  header img { width: 28px; height: 28px; }
+  h1 { font-size: 20px; margin: 0; }
+  .note { margin: 0 0 24px; color: var(--mut); max-width: 62ch; }
+  section { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; margin-bottom: 16px; scroll-margin-top: 16px; }
+  h2 { font-size: 15px; margin: 0 0 2px; }
+  .d { margin: 0 0 12px; font-size: 12.5px; color: var(--mut); max-width: 62ch; }
+  .line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .line input:not([type=checkbox]) { flex: 1 1 220px; min-width: 0; }
+  .field { display: grid; gap: 4px; margin-bottom: 12px; font-size: 13px; }
+  .field select { max-width: 280px; }
+  .rows { list-style: none; margin: 0 0 12px; padding: 0; }
+  .rows li { display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 12px; border: 1px solid var(--line); border-bottom-width: 0; font-size: 13.5px; min-height: 40px; }
+  .rows li:first-child { border-radius: 8px 8px 0 0; }
+  .rows li:last-child { border-bottom-width: 1px; border-radius: 0 0 8px 8px; }
+  .rows li:only-child { border-radius: 8px; }
+  .rows .name { overflow-wrap: anywhere; }
+  .tag { font-size: 11.5px; padding: 1px 7px; border-radius: 10px; background: var(--soft); color: var(--acc); white-space: nowrap; }
+  .rows .end { margin-left: auto; display: flex; align-items: center; gap: 2px; flex: none; }
+  .rows .end .plain { width: 28px; height: 28px; padding: 0; font-size: 15px; }
+  .rows li.focus { outline: 2px solid var(--acc); outline-offset: -2px; }
+  .opts { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 10px; font-size: 12.5px; }
+  .opts .plain:last-child { margin-left: auto; }
+  fieldset { border: 0; padding: 0; margin: 0 0 12px; display: grid; gap: 6px; }
+  fieldset label { display: flex; gap: 8px; align-items: baseline; }
+  kbd { font: inherit; padding: 1px 6px; border: 1px solid var(--line); border-radius: 5px; background: var(--page); }
+  p { margin: 0 0 8px; }
+  .status { font-size: 12.5px; margin: 8px 0 0; min-height: 1.5em; }
+</style>
+</head>
+<body>
+<main>
+  <header><img src="icons/icon-128.png" alt=""><h1>Select Translate</h1></header>
+  <p class="note">Select Translate works without a key. Chrome's on-device translator, Microsoft and Google translate your Selections out of the box. Add an OpenRouter key to translate with AI Models.</p>
+
+  <section id="providers">
+    <h2>Providers</h2>
+    <p class="d">Your OpenRouter key stays in this browser and is sent only to openrouter.ai. Create one at <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a>.</p>
+    <label class="field" for="key">OpenRouter API key</label>
+    <div class="line">
+      <input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="sk-or-v1-…">
+      <button id="saveKey" class="primary">Save key</button>
+      <button id="testKey">Test key</button>
+      <button id="deleteKey" class="plain">Delete key</button>
+    </div>
+    <p class="status" id="keyStatus" aria-live="polite"></p>
+  </section>
+
+  <section id="chain">
+    <h2>Fallback Chain</h2>
+    <p class="d">Tried from top to bottom until one entry answers. An entry that reports a rate limit is skipped until its Cooldown ends.</p>
+    <ol class="rows" id="chainList"></ol>
+    <div class="line">
+      <input id="entry" list="entryList" spellcheck="false" placeholder="google/gemma-4-31b-it:free" aria-label="Model id or Provider to add">
+      <datalist id="entryList"></datalist>
+      <button id="add">Add to chain</button>
+    </div>
+    <div class="opts">
+      <label><input type="checkbox" id="freeOnly" checked> Free Models only</label>
+      <span id="modelStatus" class="muted" aria-live="polite"></span>
+      <button class="plain" id="resetChain">Reset to default</button>
+    </div>
+  </section>
+
+  <section id="languages">
+    <h2>Languages</h2>
+    <label class="field">Target Language <select id="target"></select></label>
+    <label class="field">Second Language <select id="second"></select></label>
+    <p class="d">A Selection already in the Target Language is translated into the Second Language.</p>
+  </section>
+
+  <section id="trigger">
+    <h2>Trigger</h2>
+    <fieldset>
+      <legend class="d">When you select text on a page</legend>
+      <label><input type="radio" name="mode" value="icon"> Show the Trigger Icon, translate on click</label>
+      <label><input type="radio" name="mode" value="instant"> Translate right away</label>
+      <label><input type="radio" name="mode" value="manual"> Do nothing; use the shortcut or the right-click menu</label>
+    </fieldset>
+    <p>Shortcut: <kbd id="shortcut">…</kbd> <button class="link" id="shortcuts">Change shortcut</button></p>
+    <p class="d">"Translate selection" in the right-click menu works in every mode.</p>
+  </section>
+
+  <section id="packs">
+    <h2>Offline Packs</h2>
+    <p class="d">An Offline Pack lets Chrome translate one language pair on this device, without sending the text anywhere. Each pack is about 80 MB. Nothing downloads until you click.</p>
+    <p class="err" id="noTranslator" hidden>This browser has no on-device Translator, so the Chrome on-device entry is always skipped.</p>
+    <ul class="rows" id="packList"></ul>
+    <div class="line">
+      <select id="packFrom" aria-label="From"></select> to <select id="packTo" aria-label="To"></select>
+      <button id="addPack">Add pair</button>
+    </div>
+  </section>
+
+  <section id="sites">
+    <h2>Disabled Sites</h2>
+    <p class="d">No Trigger Icon and no instant translation on these sites. The shortcut and the right-click menu still work.</p>
+    <ul class="rows" id="siteList"></ul>
+    <p class="muted small" id="noSites">No Disabled Sites. Use "Disable on this site" in the toolbar popup to add one.</p>
+  </section>
+</main>
+<script type="module" src="options.js"></script>
+</body>
+</html>
