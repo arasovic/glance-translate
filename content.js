@@ -40,21 +40,23 @@
             border-radius: 10px; box-shadow: 0 6px 24px rgb(15 20 35 / .14); max-height: calc(100vh - 16px); overflow: auto; }
     .card:focus-visible { outline-offset: -1px; }
     .hd { display: flex; align-items: center; gap: 4px; padding: 8px 8px 0 14px; font-size: 12.5px; color: var(--mut); cursor: move; user-select: none; touch-action: none; }
-    .hd select { font: inherit; color: var(--fg); background: transparent; border: 0; border-radius: 5px; padding: 2px 2px; max-width: 170px; field-sizing: content; cursor: pointer; }
+    .hd select { font: inherit; color: var(--fg); background: transparent; border: 0; border-radius: 5px; padding: 2px 2px; min-width: 0; max-width: 170px; field-sizing: content; cursor: pointer; text-overflow: ellipsis; }
+    /* The Source Language name wraps first; the Target select is cut only when that is not enough. */
+    .hd > span { flex-shrink: 1000; }
     .hd select:hover { background: var(--soft); }
     .hd select option { color: initial; background: initial; }
-    .acts { margin-left: auto; display: flex; gap: 2px; }
+    .acts { margin-left: auto; display: flex; gap: 2px; flex: none; }
     .ib { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 6px; color: var(--mut); }
     .ib:hover, .ib[aria-expanded="true"] { background: var(--soft); color: var(--acc); }
     .tx { padding: 6px 14px 10px; font-size: 15.5px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 50vh; overflow: auto; }
     .tx.note { font-size: 14px; }
-    .ft { border-top: 1px solid var(--line); padding: 7px 14px 9px; font-size: 12px; color: var(--mut); }
+    .ft { border-top: 1px solid var(--line); padding: 7px 14px 9px; font-size: 12px; color: var(--mut); overflow-wrap: anywhere; }
     .ft b { font-weight: 600; color: var(--acc); }
     .ft p { margin: 3px 0 0; }
     .ft .err { color: var(--fg); }
     .link { color: var(--acc); text-decoration: underline; text-underline-offset: 2px; font-size: inherit; }
     .menu { margin: 4px 8px 0; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
-    .menu button { display: block; width: 100%; text-align: left; padding: 5px 8px; border-radius: 5px; font-size: 13px; }
+    .menu button { display: block; width: 100%; text-align: left; padding: 5px 8px; border-radius: 5px; font-size: 13px; overflow-wrap: anywhere; }
     .menu button:hover, .menu button:focus-visible { background: var(--soft); color: var(--acc); }
     .menu .lbl { padding: 2px 8px 4px; font-size: 12px; color: var(--mut); }
     .busy { display: flex; gap: 5px; padding: 12px 14px 14px; }
