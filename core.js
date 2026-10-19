@@ -137,11 +137,11 @@ export function parseReset(value, now) {
   return now + n * 1000;
 }
 
-// OpenRouter: a limit of 20 is per minute; 50 or 1000 (or no free requests left) is daily.
-export function cooldownUntil({ entry, headers = {}, now, freeDailyRemaining }) {
+// OpenRouter: a limit of 20 is per minute; 50 or 1000 is daily.
+export function cooldownUntil({ entry, headers = {}, now }) {
   if (isModel(entry)) {
     const limit = Number(headers['x-ratelimit-limit']);
-    if (limit === 50 || limit === 1000 || freeDailyRemaining === 0) return nextUtcMidnight(now);
+    if (limit === 50 || limit === 1000) return nextUtcMidnight(now);
     const reset = parseReset(headers['x-ratelimit-reset'], now);
     if (reset > now) return reset;
   }

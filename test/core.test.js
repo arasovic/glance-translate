@@ -133,7 +133,6 @@ test('cooldown: OpenRouter per-minute and daily limits', () => {
   const or = 'openrouter:google/gemma-4-31b-it:free';
   assert.equal(core.cooldownUntil({ entry: or, headers: { 'x-ratelimit-limit': '50' }, now: NOW }), midnight);
   assert.equal(core.cooldownUntil({ entry: or, headers: { 'x-ratelimit-limit': '1000' }, now: NOW }), midnight);
-  assert.equal(core.cooldownUntil({ entry: or, headers: {}, now: NOW, freeDailyRemaining: 0 }), midnight);
   assert.equal(core.cooldownUntil({ entry: or, headers: { 'x-ratelimit-limit': '20', 'x-ratelimit-reset': String(NOW + 30_000) }, now: NOW }), NOW + 30_000);
   assert.equal(core.cooldownUntil({ entry: or, headers: { 'x-ratelimit-limit': '20' }, now: NOW }), NOW + core.DEFAULT_COOLDOWN_MS);
 });
