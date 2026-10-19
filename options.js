@@ -20,8 +20,6 @@ const iconButton = (text, label, onClick) => {
   return b;
 };
 
-// ---- Providers ----
-
 $('key').value = s.openrouterKey ?? '';
 const keyStatus = (text, cls = 'muted') => Object.assign($('keyStatus'), { textContent: text, className: `status ${cls}` });
 
@@ -54,8 +52,6 @@ $('testKey').addEventListener('click', async () => {
   if (free?.remaining != null) parts.push(`Free Model requests left today: ${free.remaining}${free.limit != null ? ` of ${free.limit}` : ''}.`);
   keyStatus(parts.join(' '), 'ok');
 });
-
-// ---- Fallback Chain ----
 
 const KEYLESS = core.KEYLESS_CHAIN;
 const tagOf = entry => {
@@ -132,8 +128,6 @@ $('resetChain').addEventListener('click', async () => {
   renderChain();
 });
 
-// ---- Languages ----
-
 const langList = core.languageList();
 const showLang = (button, code) => {
   const name = code ? core.languageName(code) : 'None';
@@ -174,16 +168,12 @@ function langPicker(button, value, onPick, none) {
 langPicker($('target'), s.target, async code => { await save({ target: code }); renderPacks(); });
 langPicker($('second'), s.second, code => save({ second: code }), 'None');
 
-// ---- Trigger ----
-
 document.querySelector(`input[name=mode][value=${s.triggerMode}]`).checked = true;
 document.querySelectorAll('input[name=mode]').forEach(r => r.addEventListener('change', () => save({ triggerMode: r.value })));
 
 const command = (await chrome.commands.getAll()).find(c => c.name === 'translate-selection');
 $('shortcut').textContent = command?.shortcut || 'Not set';
 $('shortcuts').addEventListener('click', () => chrome.tabs.create({ url: 'chrome://extensions/shortcuts' }));
-
-// ---- Offline Packs ----
 
 const extraPairs = [];
 const hashPair = location.hash.match(/^#pack=([\w-]+):([\w-]+)$/);
@@ -253,8 +243,6 @@ $('addPack').addEventListener('click', () => {
   renderPacks(`${$('packFrom').value}:${$('packTo').value}`);
 });
 
-// ---- Disabled Sites ----
-
 function renderSites() {
   const list = $('siteList');
   list.textContent = '';
@@ -274,8 +262,6 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
   if (changes.disabledSites) renderSites();
   if (changes.target) showLang($('target'), s.target);
 });
-
-// ---- Debug ----
 
 $('debugLog').checked = !!s.debug;
 $('debugLog').addEventListener('change', e => save({ debug: e.target.checked }));

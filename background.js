@@ -34,8 +34,6 @@ async function getSettings() {
   return core.withDefaults(await chrome.storage.local.get(null), navigator.languages);
 }
 
-// ---- Providers ----
-
 async function fetchJson(url, init = {}, timeout = TIMEOUT_MS) {
   let res;
   try {
@@ -152,8 +150,6 @@ async function saveCooldown(entry, until) {
   const live = Object.fromEntries(Object.entries(cooldowns).filter(([, t]) => t > now));
   await chrome.storage.local.set({ cooldowns: { ...live, [entry]: until } });
 }
-
-// ---- Translation flow ----
 
 // Opt-in debug log (options page → Debug): step timings in this worker's console. Never the text, the key or a Provider's error text.
 async function timed(on, label, fn) {

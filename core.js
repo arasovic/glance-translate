@@ -81,8 +81,6 @@ export async function applySecondLanguage(translate, text, pick) {
   return { ...(await translate(text, pick.second)), lang: pick.second };
 }
 
-// ---- Fallback Chain ----
-
 export const OR_PREFIX = 'openrouter:';
 export const FREE_ROUTER = 'openrouter/free';
 export const KEYLESS_CHAIN = ['chrome', 'microsoft', 'google'];
@@ -123,8 +121,6 @@ export async function walkChain(chain, { skip, call }) {
   return { failed: true, skipped };
 }
 
-// ---- Cooldown ----
-
 export const DEFAULT_COOLDOWN_MS = 60_000;
 
 export const nextUtcMidnight = now => {
@@ -152,8 +148,6 @@ export function cooldownUntil({ entry, headers = {}, now, freeDailyRemaining }) 
   const retry = Number(headers['retry-after']);
   return retry > 0 ? now + retry * 1000 : now + DEFAULT_COOLDOWN_MS;
 }
-
-// ---- Provider responses ----
 
 export function httpError(status, body, headers = {}) {
   let detail = '';
@@ -191,8 +185,6 @@ export function parseOpenRouter(json) {
   if (!text) throw new Error(`Empty response (finish_reason: ${choice?.finish_reason ?? 'none'})`);
   return { text, model: json.model };
 }
-
-// ---- AI prompt ----
 
 export const wantsContext = text => text.trim().split(/\s+/).length <= 3;
 
@@ -243,8 +235,6 @@ export function textModels(list) {
   const ids = list.filter(m => m.architecture?.modality?.endsWith('->text')).map(m => m.id).filter(id => id !== FREE_ROUTER).sort();
   return [FREE_ROUTER, ...ids];
 }
-
-// ---- Settings ----
 
 export function withDefaults(stored, navLangs) {
   return {
