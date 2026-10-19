@@ -14,7 +14,8 @@
   };
   const autoTrigger = () => settings.enabled && settings.triggerMode !== 'manual' && !settings.disabledSites.includes(topHost());
 
-  const GLYPH = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M2.5 4h7M6 2.5V4M4 4c.4 2.4 2 4.3 4 5M8 4c-.5 2.6-2.4 4.7-5 6"/><path d="M9.5 13.5l2.5-6 2.5 6M10.4 11.6h3.2"/></svg>';
+  // Drawn for this file: the toolbar icon's koboyo glyph must not ship as vectors. The tile color (.cut) rings the front bubble and cuts the letters.
+  const GLYPH = '<svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M3.5 1H9.5A3 3 0 0 1 12.5 4V8A3 3 0 0 1 9.5 11H7L3.5 14V11A3 3 0 0 1 .5 8V4A3 3 0 0 1 3.5 1Z"/><path class="cut" stroke-width="1.6" d="M11.5 8H16.5A3 3 0 0 1 19.5 11V14A3 3 0 0 1 16.5 17V19.5L14 17H11.5A3 3 0 0 1 8.5 14V11A3 3 0 0 1 11.5 8Z"/><path class="cut" fill="none" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M2.6 8.4L4.8 3.2L7 8.4M3.4 6.6H6.2M14 9.6V10.4M11.4 11.2H16.6M12.3 11.5L15.9 15.4M15.7 11.5L12.1 15.4"/></svg>';
   const ICONS = {
     copy: '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="1.5"/><path d="M3 10.5V3.5A1 1 0 0 1 4 2.5h6.5"/></svg>',
     done: '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"/></svg>',
@@ -37,6 +38,7 @@
     :focus-visible { outline: 2px solid var(--acc); outline-offset: 1px; }
     .icon { position: absolute; width: 26px; height: 26px; border-radius: 7px; background: var(--acc); color: var(--on-acc);
             display: grid; place-items: center; box-shadow: 0 2px 8px rgb(20 30 80 / .3); }
+    .icon .cut { stroke: var(--acc); paint-order: stroke; }
     .card { position: absolute; width: 340px; max-width: calc(100vw - 16px); background: var(--bg); border: 1px solid var(--line);
             border-radius: 10px; box-shadow: 0 6px 24px rgb(15 20 35 / .14); max-height: calc(100vh - 16px); overflow: auto; }
     .card:focus-visible { outline-offset: -1px; }
