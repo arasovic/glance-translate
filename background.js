@@ -60,22 +60,23 @@ const google = async (text, lang) => core.parseGoogle(await fetchJson(
 
 let detector, downloading = false;
 async function detect(text) {
-  if (!('LanguageDetector' in self)) return { state: 'unavailable' };
+  if (!('LanguageDetector' in self)) return { detectorState: 'unavailable' };
   try {
     if (!detector) {
       const availability = await LanguageDetector.availability();
-      if (availability === 'unavailable') return { state: 'unavailable' };
+      if (availability === 'unavailable') return { detectorState: 'unavailable' };
       downloading = availability !== 'available';
       detector = LanguageDetector.create();
-      detector.then(() => { downloading = false; }, () => { detector = undefined; });
+      // A rejected create() stays in `detector`: the next call reports 'failed', and the one after it retries.
+      detector.catch(() => {}).then(() => { downloading = false; });
     }
     // The first create() in a profile downloads the model (about 12 s); translate without detection until it is there.
-    if (downloading) return { state: 'downloading' };
+    if (downloading) return { detectorState: 'downloading' };
     const [top] = await (await detector).detect(text);
     return { lang: top?.detectedLanguage, confidence: top?.confidence ?? 0 };
   } catch {
     detector = undefined;
-    return { state: 'failed' };
+    return { detectorState: 'failed' };
   }
 }
 
@@ -210,7 +211,7 @@ async function translateWith(settings, { text = '', block, start, end, entry }) 
   const { cooldowns } = await chrome.storage.local.get('cooldowns');
   const ctx = { text, pick, key: settings.openrouterKey, context: block && core.wantsContext(text) ? core.contextSentence(block, start, end) : '' };
   const outcome = await core.walkChain(entry ? [entry] : settings.chain, {
-    skip: async e => core.skipReason(e, { now, cooldowns, hasKey: !!settings.openrouterKey, confident: pick.confident, detectorState: detection.state, chrome: e === 'chrome' ? await chromeState(pick) : undefined }),
+    skip: async e => core.skipReason(e, { now, cooldowns, hasKey: !!settings.openrouterKey, confident: pick.confident, detectorState: detection.detectorState, chrome: e === 'chrome' ? await chromeState(pick) : undefined }),
     call: e => timed(settings.debug, e, () => callEntry(e, ctx)),
   });
 

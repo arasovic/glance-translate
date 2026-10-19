@@ -109,6 +109,8 @@ test('chain: skip rules', () => {
   assert.equal(core.skipReason('chrome', { ...base, chrome: 'downloadable' }), core.PACK_MISSING);
   assert.equal(core.skipReason('chrome', { ...base, chrome: 'unavailable' }), 'language pair not supported');
   assert.equal(core.skipReason('microsoft', { ...base, confident: false }), '');
+  assert.equal(core.skipReason('microsoft', { ...base, confident: false, detectorState: 'failed' }), '');
+  assert.equal(core.skipReason('google', { ...base, confident: false, detectorState: 'downloading' }), '');
 });
 
 test('chain: walks past skips and failures to the first answer', async () => {
