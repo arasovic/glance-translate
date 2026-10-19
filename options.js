@@ -1,12 +1,10 @@
 import * as core from './core.js';
 
 const $ = id => document.getElementById(id);
-const stored = () => chrome.storage.local.get(null);
-let settings = core.withDefaults(await stored(), navigator.languages);
-const save = async values => {
-  await chrome.storage.local.set(values);
-  settings = core.withDefaults(await stored(), navigator.languages);
-};
+let settings;
+const reload = async () => { settings = await core.readSettings(chrome.storage.local); };
+await reload();
+const save = async values => { await chrome.storage.local.set(values); await reload(); };
 
 function el(tag, props = {}, ...kids) {
   const node = Object.assign(document.createElement(tag), props);
@@ -27,12 +25,12 @@ $('saveKey').addEventListener('click', async () => {
   const key = $('key').value.trim();
   if (!key) return keyStatus('Enter a key first.', 'err');
   await save({ openrouterKey: key });
-  keyStatus('chain' in await stored() ? 'Key saved.' : 'Key saved. AI Models now back up the keyless Providers in the Fallback Chain.', 'ok');
+  keyStatus('chain' in await chrome.storage.local.get('chain') ? 'Key saved.' : 'Key saved. AI Models now back up the keyless Providers in the Fallback Chain.', 'ok');
   renderChain();
 });
 $('deleteKey').addEventListener('click', async () => {
   await chrome.storage.local.remove('openrouterKey');
-  settings = core.withDefaults(await stored(), navigator.languages);
+  await reload();
   $('key').value = '';
   keyStatus('Key deleted.');
   renderChain();
@@ -124,7 +122,7 @@ $('add').addEventListener('click', async () => {
 $('entry').addEventListener('keydown', e => e.key === 'Enter' && $('add').click());
 $('resetChain').addEventListener('click', async () => {
   await chrome.storage.local.remove('chain');
-  settings = core.withDefaults(await stored(), navigator.languages);
+  await reload();
   renderChain();
 });
 
@@ -258,7 +256,7 @@ function renderSites() {
 
 chrome.storage.onChanged.addListener(async (changes, area) => {
   if (area !== 'local') return;
-  settings = core.withDefaults(await stored(), navigator.languages);
+  await reload();
   if (changes.disabledSites) renderSites();
   if (changes.target) showLang($('target'), settings.target);
 });

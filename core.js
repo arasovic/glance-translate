@@ -246,3 +246,6 @@ export function withDefaults(stored, navLangs) {
     chain: stored.chain ?? defaultChain(!!stored.openrouterKey),
   };
 }
+
+// `area` is chrome.storage.local, passed in so this file stays free of chrome.*.
+export const readSettings = async (area, navLangs = navigator.languages) => withDefaults(await area.get(null), navLangs);

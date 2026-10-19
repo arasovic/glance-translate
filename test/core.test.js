@@ -242,3 +242,11 @@ test('settings: chain default follows the key', () => {
   assert.deepEqual(core.withDefaults({ chain: ['google'] }, ['tr']).chain, ['google']);
   assert.equal(core.withDefaults({ second: '' }, ['tr', 'en']).second, '');
 });
+
+test('settings: read from a storage area with defaults', async () => {
+  const area = { get: async keys => (keys === null ? { openrouterKey: 'k' } : {}) };
+  const settings = await core.readSettings(area, ['de-DE']);
+  assert.deepEqual(settings.chain, core.KEY_CHAIN);
+  assert.equal(settings.target, 'de');
+  assert.equal(settings.enabled, true);
+});

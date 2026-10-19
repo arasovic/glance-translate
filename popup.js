@@ -1,7 +1,7 @@
 import * as core from './core.js';
 
 const $ = id => document.getElementById(id);
-const settings = core.withDefaults(await chrome.storage.local.get(null), navigator.languages);
+const settings = await core.readSettings(chrome.storage.local);
 const save = values => chrome.storage.local.set(values);
 
 $('enabled').checked = settings.enabled;

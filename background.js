@@ -30,9 +30,7 @@ chrome.commands.onCommand.addListener((command, tab) => {
   chrome.tabs.sendMessage(tab.id, { type: 'translateSelection', keyboard: true }).then(answered => answered || openPopup(), () => openPopup());
 });
 
-async function getSettings() {
-  return core.withDefaults(await chrome.storage.local.get(null), navigator.languages);
-}
+const getSettings = () => core.readSettings(chrome.storage.local);
 
 async function fetchJson(url, init = {}, timeout = TIMEOUT_MS) {
   let res;
