@@ -20,15 +20,13 @@ $('saveKey').addEventListener('click', async () => {
   const key = $('key').value.trim();
   if (!key) return keyStatus('Enter a key first.', 'err');
   await save({ openrouterKey: key });
-  keyStatus('chain' in await chrome.storage.local.get('chain') ? 'Key saved.' : 'Key saved. AI Models now back up the keyless Providers in the Fallback Chain.', 'ok');
-  renderChain();
+  keyStatus('Key saved. Explain is ready in the Translation Card.', 'ok');
 });
 $('deleteKey').addEventListener('click', async () => {
   await chrome.storage.local.remove('openrouterKey');
   await reload();
   $('key').value = '';
-  keyStatus('Key deleted.');
-  renderChain();
+  keyStatus('Key deleted. Explain is off; translation works as before.');
 });
 
 const money = n => `$${Number(n).toFixed(2)}`;
@@ -46,43 +44,54 @@ $('testKey').addEventListener('click', async () => {
   keyStatus(parts.join(' '), 'ok');
 });
 
-const KEYLESS = core.KEYLESS_CHAIN;
+// The Fallback Chain and the Explain Model list: ordered rows with move and remove buttons.
+const LISTS = {
+  chain: { list: 'chainList', empty: 'The chain is empty. Reset it to default.' },
+  explainModels: { list: 'modelList', empty: 'The list is empty. Add a Model or reset to default.', tags: true },
+};
 
-function renderChain() {
-  const list = $('chainList');
-  list.textContent = '';
-  settings.chain.forEach((entry, i) => {
+function renderRows(name) {
+  const { list, empty, tags } = LISTS[name];
+  const items = settings[name];
+  $(list).textContent = '';
+  items.forEach((entry, i) => {
+    const label = core.entryLabel(entry);
     const move = async to => {
-      const chain = [...settings.chain];
-      chain.splice(to, 0, chain.splice(i, 1)[0]);
-      await save({ chain });
-      renderChain();
-      $('chainList').children[to]?.querySelector(`[aria-label^="${to < i ? 'Move up' : 'Move down'}"]`)?.focus();
+      const next = [...items];
+      next.splice(to, 0, next.splice(i, 1)[0]);
+      await save({ [name]: next });
+      renderRows(name);
+      $(list).children[to]?.querySelector(`[aria-label^="${to < i ? 'Move up' : 'Move down'}"]`)?.focus();
     };
     const end = el('span', { className: 'end' });
-    if (i > 0) end.append(iconButton('↑', `Move up ${core.entryLabel(entry)}`, () => move(i - 1)));
-    if (i < settings.chain.length - 1) end.append(iconButton('↓', `Move down ${core.entryLabel(entry)}`, () => move(i + 1)));
-    end.append(iconButton('✕', `Remove ${core.entryLabel(entry)}`, async () => {
-      await save({ chain: settings.chain.filter(e => e !== entry) });
-      renderChain();
+    if (i > 0) end.append(iconButton('↑', `Move up ${label}`, () => move(i - 1)));
+    if (i < items.length - 1) end.append(iconButton('↓', `Move down ${label}`, () => move(i + 1)));
+    end.append(iconButton('✕', `Remove ${label}`, async () => {
+      await save({ [name]: items.filter(e => e !== entry) });
+      renderRows(name);
     }));
-    const li = el('li', {}, el('span', { className: 'name', textContent: core.entryLabel(entry) }), el('span', { className: 'tag', textContent: core.entryTag(entry) }));
-    if (core.isModel(entry) && !settings.openrouterKey) li.append(el('span', { className: 'muted small', textContent: 'needs a key' }));
+    const li = el('li', {}, el('span', { className: 'name', textContent: label }));
+    if (tags) li.append(el('span', { className: 'tag', textContent: core.entryTag(entry) }));
     li.append(end);
-    list.append(li);
+    $(list).append(li);
   });
-  if (!settings.chain.length) list.append(el('li', { className: 'muted', textContent: 'The chain is empty. Add an entry or reset to default.' }));
-  fillEntryList();
+  if (!items.length) $(list).append(el('li', { className: 'muted', textContent: empty }));
+  if (name === 'explainModels') fillModelOptions();
 }
+
+$('resetChain').addEventListener('click', async () => {
+  await chrome.storage.local.remove('chain');
+  await reload();
+  renderRows('chain');
+});
 
 let models = [];
-function fillEntryList() {
-  const list = $('entryList');
-  list.textContent = '';
-  for (const entry of KEYLESS) if (!settings.chain.includes(entry)) list.append(el('option', { value: core.entryLabel(entry) }));
-  for (const id of models) if (!settings.chain.includes(core.OR_PREFIX + id)) list.append(el('option', { value: id }));
+function fillModelOptions() {
+  $('modelOptions').textContent = '';
+  for (const id of models) if (!settings.explainModels.includes(core.OR_PREFIX + id)) $('modelOptions').append(el('option', { value: id }));
 }
 
+// The list loads when the user starts to add a Model, so opening the options page contacts no AI Provider.
 async function loadModels() {
   const all = !$('freeOnly').checked;
   $('modelStatus').textContent = 'Loading Models…';
@@ -94,26 +103,26 @@ async function loadModels() {
     models = res;
     $('modelStatus').textContent = `${models.length} ${all ? 'Models' : 'Free Models'} available. You can also type any Model id.`;
   }
-  fillEntryList();
+  fillModelOptions();
 }
+$('model').addEventListener('focus', loadModels, { once: true });
 $('freeOnly').addEventListener('change', loadModels);
 
-$('add').addEventListener('click', async () => {
-  const value = $('entry').value.trim();
-  if (!value) return $('entry').focus();
-  const entry = KEYLESS.find(e => e === value.toLowerCase() || core.entryLabel(e).toLowerCase() === value.toLowerCase())
-    ?? core.OR_PREFIX + value;
-  if (/\s/.test(value) && !KEYLESS.includes(entry)) return ($('modelStatus').textContent = 'A Model id has no spaces, for example nvidia/nemotron-3-super-120b-a12b:free.');
-  if (settings.chain.includes(entry)) return ($('modelStatus').textContent = `${core.entryLabel(entry)} is already in the chain.`);
-  await save({ chain: [...settings.chain, entry] });
-  $('entry').value = '';
-  renderChain();
+$('addModel').addEventListener('click', async () => {
+  const id = $('model').value.trim();
+  if (!id) return $('model').focus();
+  if (/\s/.test(id)) return ($('modelStatus').textContent = 'A Model id has no spaces, for example nvidia/nemotron-3-super-120b-a12b:free.');
+  const entry = core.OR_PREFIX + id;
+  if (settings.explainModels.includes(entry)) return ($('modelStatus').textContent = `${id} is already in the list.`);
+  await save({ explainModels: [...settings.explainModels, entry] });
+  $('model').value = '';
+  renderRows('explainModels');
 });
-$('entry').addEventListener('keydown', e => e.key === 'Enter' && $('add').click());
-$('resetChain').addEventListener('click', async () => {
-  await chrome.storage.local.remove('chain');
+$('model').addEventListener('keydown', e => e.key === 'Enter' && $('addModel').click());
+$('resetModels').addEventListener('click', async () => {
+  await chrome.storage.local.remove('explainModels');
   await reload();
-  renderChain();
+  renderRows('explainModels');
 });
 
 const langList = core.languageList();
@@ -254,8 +263,10 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
 $('debugLog').checked = !!settings.debug;
 $('debugLog').addEventListener('change', e => save({ debug: e.target.checked }));
 
-renderChain();
+renderRows('chain');
+renderRows('explainModels');
 renderSites();
-loadModels();
 await renderPacks(hashPair && `${hashPair[1]}:${hashPair[2]}`);
 if (location.hash && !hashPair) document.querySelector(location.hash)?.scrollIntoView();
+// The card's "Add key" link opens #ai.
+if (location.hash === '#ai' && !settings.openrouterKey) $('key').focus();

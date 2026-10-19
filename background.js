@@ -1,6 +1,6 @@
 import * as core from './core.js';
 
-const OPENROUTER = 'https://openrouter.ai/api/v1';
+const OPENROUTER = core.OPENROUTER;
 const TIMEOUT_MS = 30_000;
 
 chrome.runtime.onInstalled.addListener(({ reason }) => {
@@ -104,34 +104,16 @@ async function chromeTranslate(text, pick) {
   }
 }
 
-async function openRouter(model, { text, pick, context, key }) {
-  const messages = core.buildMessages({ text, pick, context });
-  const send = reasoning => fetchJson(`${OPENROUTER}/chat/completions`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', 'X-OpenRouter-Title': 'Glance Translate' },
-    body: JSON.stringify(core.openRouterBody(model, messages, text.length, reasoning)),
-  }, Math.min(TIMEOUT_MS, 10_000 + text.length * 10)); // Free Models stall for 15–30 s at times; move on sooner on short text.
-  let json;
-  try {
-    json = await send(true);
-  } catch (e) {
-    if (e.status !== 400) throw e;
-    json = await send(false); // Some Models reject the reasoning parameter.
-  }
-  return { ...core.parseOpenRouter(json), lang: pick.lang };
-}
-
 const keyInfo = async key => (await fetchJson(`${OPENROUTER}/key`, { headers: { Authorization: `Bearer ${key}` } })).data;
 
-async function callEntry(entry, ctx) {
+async function callEntry(entry, { text, pick }) {
   try {
-    if (entry === 'chrome') return await chromeTranslate(ctx.text, ctx.pick);
-    if (entry === 'microsoft') return await core.applySecondLanguage(microsoft, ctx.text, ctx.pick);
-    if (entry === 'google') return await core.applySecondLanguage(google, ctx.text, ctx.pick);
-    if (core.isModel(entry)) return await openRouter(core.modelOf(entry), ctx);
+    if (entry === 'chrome') return await chromeTranslate(text, pick);
+    if (entry === 'microsoft') return await core.applySecondLanguage(microsoft, text, pick);
+    if (entry === 'google') return await core.applySecondLanguage(google, text, pick);
     throw new Error('Unknown entry');
   } catch (e) {
-    if (e.status === 429) await startCooldown(entry, e.headers ?? {}, ctx.key);
+    if (e.status === 429) await startCooldown(entry, e.headers ?? {});
     throw e;
   }
 }
@@ -188,7 +170,7 @@ async function translate(msg) {
   return res;
 }
 
-async function translateWith(settings, { text = '', block, start, end, entry }) {
+async function translateWith(settings, { text = '', entry }) {
   text = text.trim();
   const check = core.checkSelection(text);
   if (check === 'ignore') return { error: 'There is no text to translate.' };
@@ -209,10 +191,9 @@ async function translateWith(settings, { text = '', block, start, end, entry }) 
 
   const now = Date.now();
   const { cooldowns } = await chrome.storage.local.get('cooldowns');
-  const ctx = { text, pick, key: settings.openrouterKey, context: block && core.wantsContext(text) ? core.contextSentence(block, start, end) : '' };
   const outcome = await core.walkChain(entry ? [entry] : settings.chain, {
-    skip: async e => core.skipReason(e, { now, cooldowns, hasKey: !!settings.openrouterKey, confident: pick.confident, detectorState: detection.detectorState, chrome: e === 'chrome' ? await chromeState(pick) : undefined }),
-    call: e => timed(settings.debug, e, () => callEntry(e, ctx)),
+    skip: async e => core.skipReason(e, { now, cooldowns, confident: pick.confident, detectorState: detection.detectorState, chrome: e === 'chrome' ? await chromeState(pick) : undefined }),
+    call: e => timed(settings.debug, e, () => callEntry(e, { text, pick })),
   });
 
   const skipped = outcome.skipped.map(x => ({
@@ -224,17 +205,57 @@ async function translateWith(settings, { text = '', block, start, end, entry }) 
   if (outcome.failed) return { ...base, failed: true, skipped };
   if (outcome.already) return { ...base, already: true, from: outcome.detected, skipped };
 
-  const result = { text: outcome.text, lang: outcome.lang, from: outcome.detected || pick.from || '', answeredBy: answeredBy(outcome.entry, outcome.model), entry: outcome.entry };
+  const result = { text: outcome.text, lang: outcome.lang, from: outcome.detected || pick.from || '', answeredBy: core.entryLabel(outcome.entry), entry: outcome.entry };
   if (!entry) await cacheSet(cacheKey, result);
   return { ...base, ...result, skipped };
 }
+
+// Explain's text arrives in parts: { text } with the explanation so far, then { done }, { failed } or { needsKey }.
+// Only the background holds the key; the content script learns only that there is none.
+async function explain({ text = '', block, start, end, translation = '' }, signal, post) {
+  const settings = await getSettings();
+  const key = settings.openrouterKey;
+  if (!key) return post({ needsKey: true });
+  text = text.trim();
+  if (core.checkSelection(text) !== 'ok') return post({ failed: true, skipped: ['There is no text to explain.'] });
+  const context = block && core.wantsContext(text) ? core.contextSentence(block, start, end) : '';
+  const messages = core.explainMessages({ text, translation, context, target: settings.target });
+  const now = Date.now();
+  const { cooldowns } = await chrome.storage.local.get('cooldowns');
+  let shown = '';
+  const show = part => part !== shown && post({ text: shown = part });
+  // A Model that fails, even after some text, hands over to the next one, which starts the text again.
+  const outcome = await core.walkChain(settings.explainModels, {
+    skip: async e => (signal.aborted ? 'cancelled' : core.skipReason(e, { now, cooldowns })),
+    call: async e => {
+      show('');
+      try {
+        return await timed(settings.debug, `explain ${core.modelOf(e)}`, () => core.streamExplanation(core.modelOf(e), messages, key, signal, show));
+      } catch (err) {
+        if (err.status === 429) await startCooldown(e, err.headers ?? {}, key);
+        throw err;
+      }
+    },
+  });
+  if (outcome.failed) return post({ failed: true, skipped: outcome.skipped.map(s => `${core.entryLabel(s.entry)}: ${s.reason}.`) });
+  post({ done: true, text: outcome.text, answeredBy: answeredBy(outcome.entry, outcome.model) });
+}
+
+// Closing the Translation Card disconnects the port, which cancels the request.
+chrome.runtime.onConnect.addListener(port => {
+  if (port.name !== 'explain' || !port.sender?.tab) return;
+  const cancel = new AbortController();
+  port.onDisconnect.addListener(() => cancel.abort());
+  const post = msg => { if (!cancel.signal.aborted) port.postMessage(msg); };
+  port.onMessage.addListener(msg => explain(msg, cancel.signal, post).catch(e => post({ failed: true, skipped: [e.message] })));
+});
 
 async function models(all) {
   const list = (await fetchJson(`${OPENROUTER}/models${all ? '' : '?max_price=0'}`)).data;
   return core.textModels(list);
 }
 
-// Content scripts may only translate and open the options page. Key handling stays with extension pages.
+// Content scripts may only translate, explain and open the options page. Key handling stays with extension pages.
 const handlers = {
   translate,
   languages: async () => {

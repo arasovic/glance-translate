@@ -21,6 +21,7 @@
     done: '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"/></svg>',
     listen: '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 6v4h2.5L8.5 13V3L5 6z"/><path d="M11 5.5a3.5 3.5 0 0 1 0 5M12.8 3.6a6 6 0 0 1 0 8.8" stroke-linecap="round"/></svg>',
     pause: '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M5.5 3.5v9M10.5 3.5v9"/></svg>',
+    explain: '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 11.2C4.5 10.3 3.6 8.8 3.6 7.1a4.4 4.4 0 0 1 8.8 0c0 1.7-.9 3.2-2.4 4.1V12H6z"/><path d="M6.3 14.3h3.4"/></svg>',
     more: '<svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="3.5" cy="8" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="12.5" cy="8" r="1.3"/></svg>',
   };
 
@@ -55,6 +56,13 @@
     .icon-button:hover, .icon-button[aria-expanded="true"] { background: var(--soft); color: var(--acc); }
     .text { padding: 6px 14px 10px; font-size: 15.5px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 50vh; overflow: auto; }
     .text.note { font-size: 14px; }
+    .explain { margin: 0 14px 10px; padding: 8px 10px 9px; border-radius: 8px; background: var(--soft); font-size: 13.5px; line-height: 1.5;
+               white-space: pre-wrap; overflow-wrap: anywhere; }
+    .explain.wait { color: var(--mut); }
+    .explain .by { display: block; margin-top: 5px; font-size: 12px; color: var(--mut); white-space: normal; }
+    .explain .by b { font-weight: 600; color: var(--acc); }
+    .explain p { margin: 3px 0 0; font-size: 12px; color: var(--mut); }
+    .picking > .text, .picking > .explain, .picking > .foot { display: none; }
     .foot { border-top: 1px solid var(--line); padding: 7px 14px 9px; font-size: 12px; color: var(--mut); overflow-wrap: anywhere; }
     .foot b { font-weight: 600; color: var(--acc); }
     .foot p { margin: 3px 0 0; }
@@ -104,6 +112,7 @@
     card.textContent = '';
     live.textContent = '';
     stopListen();
+    stopExplain();
   }
 
   const isEditable = node => {
@@ -117,7 +126,7 @@
     return element ?? document.body;
   }
 
-  // The Selection, its position and, for 1–3 words, the text block around it for the Context Sentence.
+  // The Selection, its position and, for 1–3 words, the text block around it for Explain's Context Sentence.
   function readSelection() {
     const sel = getSelection();
     if (!sel?.rangeCount || sel.isCollapsed) return null;
@@ -180,7 +189,8 @@
     card.addEventListener('lostpointercapture', () => card.removeEventListener('pointermove', move), { once: true });
   }
 
-  const send = msg => chrome.runtime.sendMessage(msg).catch(e => ({ error: /context invalidated/i.test(e.message) ? 'Glance Translate was updated. Reload this page to use it.' : e.message }));
+  const RELOAD = 'Glance Translate was updated. Reload this page to use it.';
+  const send = msg => chrome.runtime.sendMessage(msg).catch(e => ({ error: /context invalidated/i.test(e.message) ? RELOAD : e.message }));
 
   async function translateSelection(sel, { entry, keyboard } = {}) {
     if (!sel) return;
@@ -191,10 +201,11 @@
     card.hidden = false;
     live.textContent = ''; // Cleared first, so the same translation again is still announced.
     card.setAttribute('aria-busy', 'true');
+    stopExplain();
     card.replaceChildren(el('div', { className: 'busy', title: 'Translating…' }, el('i'), el('i'), el('i')));
     placeCard(sel.box);
     if (keyboard) card.focus();
-    const [res] = await Promise.all([send({ type: 'translate', text: sel.text, block: sel.block, start: sel.start, end: sel.end, entry }), loadLangs()]);
+    const [res] = await Promise.all([send({ type: 'translate', text: sel.text, entry }), loadLangs()]);
     if (lastSelection !== sel || card.hidden) return;
     render(res);
     card.removeAttribute('aria-busy');
@@ -221,7 +232,7 @@
           translateSelection(lastSelection, { keyboard: true });
         },
       });
-      for (const x of card.querySelectorAll('.text, .foot')) x.hidden = true;
+      card.classList.add('picking');
       card.querySelector('.head').after(panel);
       placeCard(lastSelection.box);
     });
@@ -232,7 +243,7 @@
     const panel = card.querySelector('.lang-panel');
     if (!panel) return false;
     panel.remove();
-    for (const x of card.querySelectorAll('.text, .foot')) x.hidden = false;
+    card.classList.remove('picking');
     card.querySelector('.head .lang')?.setAttribute('aria-expanded', 'false');
     placeCard(lastSelection.box);
     return true;
@@ -261,6 +272,7 @@
 
   function render(res) {
     stopListen();
+    card.classList.remove('picking');
     card.textContent = '';
     if (res.error) {
       card.append(el('div', { className: 'text note', textContent: res.error }));
@@ -277,7 +289,7 @@
 
     if (res.text) {
       const copy = iconButton('Copy translation', ICONS.copy, () => copyText(res.text, copy));
-      acts.append(copy, listenButton(res.text, res.lang));
+      acts.append(copy, listenButton(res.text, res.lang), explainButton(res));
     }
     const others = (res.chain ?? []).filter(c => c.entry !== res.entry);
     if (others.length) {
@@ -304,6 +316,65 @@
     }
     if (foot.childNodes.length) card.append(foot);
     announce(text.textContent, res.text ? res.lang : 'en');
+  }
+
+  // Explain opens below the translation; a click on the button hides it, the next one shows it again.
+  // After a failure, a click asks again, for example once the user has added a key.
+  function explainButton(res) {
+    const b = iconButton('Explain', ICONS.explain, () => {
+      const box = card.querySelector('.explain');
+      if (box && box.dataset.state !== 'failed') box.hidden = !box.hidden;
+      else {
+        box?.remove();
+        card.querySelector('.text').after(startExplain(res));
+      }
+      b.setAttribute('aria-expanded', String(!card.querySelector('.explain').hidden));
+      placeCard(lastSelection.box);
+    });
+    b.setAttribute('aria-expanded', 'false');
+    return b;
+  }
+
+  let explainPort;
+  const stopExplain = () => { explainPort?.disconnect(); explainPort = null; };
+
+  function startExplain(res) {
+    stopExplain();
+    const sel = lastSelection;
+    const box = el('div', { className: 'explain wait', dir: 'auto', textContent: 'Explaining…' });
+    box.dataset.state = 'busy';
+    box.setAttribute('aria-busy', 'true');
+    const show = (state, ...kids) => {
+      box.className = state === 'wait' ? 'explain wait' : 'explain';
+      box.replaceChildren(...kids);
+      if (state !== 'wait') box.dataset.state = state;
+      if (state === 'done' || state === 'failed') {
+        box.removeAttribute('aria-busy');
+        announce(box.textContent, state === 'done' ? res.target : 'en');
+      }
+      placeCard(sel.box);
+    };
+    const said = text => el('span', { lang: res.target, textContent: text });
+    try {
+      explainPort = chrome.runtime.connect({ name: 'explain' });
+    } catch {
+      show('failed', RELOAD);
+      return box;
+    }
+    const port = explainPort;
+    port.onMessage.addListener(m => {
+      if (port !== explainPort || lastSelection !== sel || card.hidden) return;
+      if (m.needsKey) show('failed', 'Explain needs an OpenRouter key. ', link('Add key', '#ai'));
+      else if (m.failed) show('failed', 'No Model in your Explain list could answer.', ...m.skipped.map(line => el('p', { textContent: line })), el('p', {}, link('Explain settings', '#ai')));
+      else if (m.done) show('done', said(m.text), el('span', { className: 'by' }, 'Explained by ', el('b', { textContent: m.answeredBy })));
+      else show(m.text ? 'busy' : 'wait', m.text ? said(m.text) : 'Explaining…');
+    });
+    // Fires only when the background ends the port, for example when the browser stops the service worker.
+    port.onDisconnect.addListener(() => {
+      if (port === explainPort && box.dataset.state === 'busy') show('failed', 'Explain stopped before it finished.');
+    });
+    port.postMessage({ text: sel.text, block: sel.block, start: sel.start, end: sel.end, translation: res.text });
+    return box;
   }
 
   function link(text, hash) {

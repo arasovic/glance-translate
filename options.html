@@ -13,6 +13,7 @@
   .note { margin: 0 0 24px; color: var(--mut); max-width: 62ch; }
   section { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; margin-bottom: 16px; scroll-margin-top: 16px; }
   h2 { font-size: 15px; margin: 0 0 2px; }
+  h3 { font-size: 13.5px; margin: 18px 0 2px; }
   .desc { margin: 0 0 12px; font-size: 12.5px; color: var(--mut); max-width: 62ch; }
   .line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
   .line input:not([type=checkbox]) { flex: 1 1 220px; min-width: 0; }
@@ -44,36 +45,7 @@
 <body>
 <main>
   <header><img src="icons/icon-128.png" alt=""><h1>Glance Translate</h1></header>
-  <p class="note">Glance Translate works without a key. Chrome's on-device translator, Microsoft and Google translate your Selections out of the box. Add an OpenRouter key to use AI Models as a backup, or pick one in the Translation Card's “Translate with another entry” menu.</p>
-
-  <section id="providers">
-    <h2>Providers</h2>
-    <p class="desc">Your OpenRouter key stays in this browser and is sent only to openrouter.ai. Create one at <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a>.</p>
-    <label class="field" for="key">OpenRouter API key</label>
-    <div class="line">
-      <input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="sk-or-v1-…">
-      <button id="saveKey" class="primary">Save key</button>
-      <button id="testKey">Test key</button>
-      <button id="deleteKey" class="plain">Delete key</button>
-    </div>
-    <p class="status" id="keyStatus" aria-live="polite"></p>
-  </section>
-
-  <section id="chain">
-    <h2>Fallback Chain</h2>
-    <p class="desc">Tried from top to bottom until one entry answers. An entry that reports a rate limit is skipped until its Cooldown ends.</p>
-    <ol class="rows" id="chainList"></ol>
-    <div class="line">
-      <input id="entry" list="entryList" spellcheck="false" placeholder="nvidia/nemotron-3-super-120b-a12b:free" aria-label="Model id or Provider to add">
-      <datalist id="entryList"></datalist>
-      <button id="add">Add to chain</button>
-    </div>
-    <div class="opts">
-      <label><input type="checkbox" id="freeOnly" checked> Free Models only</label>
-      <span id="modelStatus" class="muted" aria-live="polite"></span>
-      <button class="plain" id="resetChain">Reset to default</button>
-    </div>
-  </section>
+  <p class="note">Glance Translate works without a key. Chrome's on-device translator, Microsoft and Google translate your Selections out of the box.</p>
 
   <section id="languages">
     <h2>Languages</h2>
@@ -94,6 +66,15 @@
     <p class="desc">"Translate selection" in the right-click menu works in every mode.</p>
   </section>
 
+  <section id="chain">
+    <h2>Fallback Chain</h2>
+    <p class="desc">Tried from top to bottom until one entry answers. An entry that reports a rate limit is skipped until its Cooldown ends.</p>
+    <ol class="rows" id="chainList"></ol>
+    <div class="opts">
+      <button class="plain" id="resetChain">Reset to default</button>
+    </div>
+  </section>
+
   <section id="packs">
     <h2>Offline Packs</h2>
     <p class="desc">An Offline Pack lets Chrome translate one language pair on this device, without sending the text anywhere. Each pack is about 80 MB. Nothing downloads until you click.</p>
@@ -110,6 +91,33 @@
     <p class="desc">No Trigger Icon and no instant translation on these sites. The shortcut and the right-click menu still work.</p>
     <ul class="rows" id="siteList"></ul>
     <p class="muted small" id="noSites">No Disabled Sites. Use "Don't show on this site" in the toolbar popup to add one.</p>
+  </section>
+
+  <section id="ai">
+    <h2>AI (optional)</h2>
+    <p class="desc">Translation never needs a key. With your own OpenRouter key, the Translation Card gets Explain: what a short Selection means in its sentence, other ways to say it, and what a translation of longer text may lose.</p>
+    <p class="desc">The key stays in this browser and is sent only to openrouter.ai, only when you click Explain or Test key. Create one at <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a>.</p>
+    <label class="field" for="key">OpenRouter API key</label>
+    <div class="line">
+      <input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="sk-or-v1-…">
+      <button id="saveKey" class="primary">Save key</button>
+      <button id="testKey">Test key</button>
+      <button id="deleteKey" class="plain">Delete key</button>
+    </div>
+    <p class="status" id="keyStatus" aria-live="polite"></p>
+    <h3>Explain Models</h3>
+    <p class="desc">Tried from top to bottom until one answers. A Model that reports a rate limit is skipped until its Cooldown ends. Free Models cost nothing; other Models use your OpenRouter credit.</p>
+    <ol class="rows" id="modelList"></ol>
+    <div class="line">
+      <input id="model" list="modelOptions" spellcheck="false" placeholder="nvidia/nemotron-3-super-120b-a12b:free" aria-label="Model id to add">
+      <datalist id="modelOptions"></datalist>
+      <button id="addModel">Add Model</button>
+    </div>
+    <div class="opts">
+      <label><input type="checkbox" id="freeOnly" checked> Suggest Free Models only</label>
+      <span id="modelStatus" class="muted" aria-live="polite"></span>
+      <button class="plain" id="resetModels">Reset to default</button>
+    </div>
   </section>
 
   <section id="debug">
