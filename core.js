@@ -100,14 +100,20 @@ export function entryTag(entry) {
 
 export const PACK_MISSING = 'Offline Pack not downloaded';
 
+const DETECTOR_SKIP = {
+  unavailable: 'Language Detector not available',
+  downloading: 'language detection model downloading',
+  failed: 'language detection failed',
+};
+
 // `chrome` is the Translator availability for the pair ('available', 'downloadable', ...) or 'missing'.
-// `downloading` is true while Chrome downloads the Language Detector model.
-export function skipReason(entry, { now, cooldowns = {}, hasKey, confident, downloading, chrome }) {
+// `detectorState` is set when the Language Detector gave no result: 'unavailable', 'downloading' or 'failed'.
+export function skipReason(entry, { now, cooldowns = {}, hasKey, confident, detectorState, chrome }) {
   if (cooldowns[entry] > now) return `in Cooldown until ${new Date(cooldowns[entry]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
   if (isModel(entry) && !hasKey) return 'no OpenRouter key';
   if (entry !== 'chrome') return '';
   if (chrome === 'missing') return 'Translator API not available';
-  if (downloading) return 'language detection model downloading';
+  if (detectorState) return DETECTOR_SKIP[detectorState];
   if (!confident) return 'language detection unsure';
   if (chrome === 'unavailable') return 'language pair not supported';
   return chrome === 'available' ? '' : PACK_MISSING;

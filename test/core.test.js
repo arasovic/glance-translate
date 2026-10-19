@@ -102,8 +102,10 @@ test('chain: skip rules', () => {
   assert.equal(core.skipReason('openrouter:x', { ...base, hasKey: false }), 'no OpenRouter key');
   assert.equal(core.skipReason('chrome', { ...base, chrome: 'missing' }), 'Translator API not available');
   assert.equal(core.skipReason('chrome', { ...base, confident: false }), 'language detection unsure');
-  assert.equal(core.skipReason('chrome', { ...base, confident: false, downloading: true }), 'language detection model downloading');
-  assert.equal(core.skipReason('chrome', { ...base, chrome: 'missing', downloading: true }), 'Translator API not available');
+  assert.equal(core.skipReason('chrome', { ...base, confident: false, detectorState: 'downloading' }), 'language detection model downloading');
+  assert.equal(core.skipReason('chrome', { ...base, confident: false, detectorState: 'unavailable' }), 'Language Detector not available');
+  assert.equal(core.skipReason('chrome', { ...base, confident: false, detectorState: 'failed' }), 'language detection failed');
+  assert.equal(core.skipReason('chrome', { ...base, chrome: 'missing', detectorState: 'downloading' }), 'Translator API not available');
   assert.equal(core.skipReason('chrome', { ...base, chrome: 'downloadable' }), core.PACK_MISSING);
   assert.equal(core.skipReason('chrome', { ...base, chrome: 'unavailable' }), 'language pair not supported');
   assert.equal(core.skipReason('microsoft', { ...base, confident: false }), '');
