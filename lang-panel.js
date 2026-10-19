@@ -36,10 +36,10 @@ function el(tag, props = {}, ...kids) {
 
 let langPanelCount = 0;
 
-// list: [[code, English name, own name]]; pinned: codes for "Your languages"; none: label of an empty choice.
+// list: [{ code, name (English), own (its own name) }]; pinned: codes for "Your languages"; none: label of an empty choice.
 function languagePanel({ list, value, pinned = [], none, label, onPick, onClose }) {
   const fold = s => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
-  const all = list.map(([code, name, own = '']) => ({ code, name, own, key: [fold(name), fold(own)] }));
+  const all = list.map(l => ({ ...l, key: [fold(l.name), fold(l.own)] }));
   const byCode = new Map(all.map(l => [l.code, l]));
   const yours = [...(none ? [{ code: '', name: none, own: '' }] : []), ...new Set(pinned)].map(c => typeof c === 'string' ? byCode.get(c) : c).filter(Boolean);
   // Lower is better: the code itself, then a name that starts with the query, a word in it that does, a name that

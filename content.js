@@ -252,7 +252,7 @@
     return b;
   }
 
-  const nameOf = code => langs?.list?.find(([c]) => c === code)?.[1] || code;
+  const nameOf = code => langs?.list?.find(l => l.code === code)?.name || code;
 
   // Screen readers often skip a live region that is inserted already filled, so the card
   // announces through one region that lives as long as the host.

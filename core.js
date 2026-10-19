@@ -45,7 +45,7 @@ export function nativeName(code) {
     return own.toLowerCase() === languageName(code).toLowerCase() ? '' : own;
   } catch { return ''; }
 }
-export const languageList = () => LANGS.map(code => [code, languageName(code), nativeName(code)]).sort((a, b) => a[1].localeCompare(b[1], 'en'));
+export const languageList = () => LANGS.map(code => ({ code, name: languageName(code), own: nativeName(code) })).sort((a, b) => a.name.localeCompare(b.name, 'en'));
 
 export function defaultLanguages(navLangs = []) {
   const codes = navLangs.map(l => canonical(l)).filter(l => LANGS.includes(l));

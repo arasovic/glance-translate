@@ -41,8 +41,8 @@ test('languages: Target and Second Language defaults', () => {
 test('languages: every language has a name, the list is in name order', () => {
   const list = core.languageList();
   assert.equal(list.length, core.LANGS.length);
-  for (const [code, name] of list) assert.ok(name !== code && !name.startsWith(`${code} `), `${code} has no name`);
-  assert.deepEqual(list.map(([, n]) => n), list.map(([, n]) => n).sort((a, b) => a.localeCompare(b, 'en')));
+  for (const { code, name } of list) assert.ok(name !== code && !name.startsWith(`${code} `), `${code} has no name`);
+  assert.deepEqual(list.map(l => l.name), list.map(l => l.name).sort((a, b) => a.localeCompare(b, 'en')));
   assert.equal(core.languageName('ty'), 'Tahitian');
 });
 
