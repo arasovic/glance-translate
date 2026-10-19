@@ -1,5 +1,3 @@
-# Glance Translate
-
 ![Glance Translate](.github/promo.png)
 
 A Chromium extension (Manifest V3). Select text on a web page and read it in your language, right where it is. It works right after install, with no account and no key.
