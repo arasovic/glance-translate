@@ -2,6 +2,8 @@
 
 A Chromium extension (Manifest V3). Select text on a web page and read it in your language, right where it is. It works right after install, with no account and no key.
 
+![The Translation Card under a selected Turkish sentence, with its English translation](.github/screenshot.png)
+
 - It tries Chrome's built-in on-device translator first. When it answers, the text stays on your device.
 - When it cannot answer, Microsoft and Google translation services answer instead.
 - With your own OpenRouter key, the Translation Card can also explain a translation.
