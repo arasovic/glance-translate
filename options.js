@@ -47,11 +47,6 @@ $('testKey').addEventListener('click', async () => {
 });
 
 const KEYLESS = core.KEYLESS_CHAIN;
-const tagOf = entry => {
-  if (KEYLESS.includes(entry)) return 'Keyless';
-  if (core.modelOf(entry) === core.FREE_ROUTER) return 'Free Router';
-  return entry.endsWith(':free') ? 'Free Model' : 'Model';
-};
 
 function renderChain() {
   const list = $('chainList');
@@ -71,7 +66,7 @@ function renderChain() {
       await save({ chain: settings.chain.filter(e => e !== entry) });
       renderChain();
     }));
-    const li = el('li', {}, el('span', { className: 'name', textContent: core.entryLabel(entry) }), el('span', { className: 'tag', textContent: tagOf(entry) }));
+    const li = el('li', {}, el('span', { className: 'name', textContent: core.entryLabel(entry) }), el('span', { className: 'tag', textContent: core.entryTag(entry) }));
     if (core.isModel(entry) && !settings.openrouterKey) li.append(el('span', { className: 'muted small', textContent: 'needs a key' }));
     li.append(end);
     list.append(li);

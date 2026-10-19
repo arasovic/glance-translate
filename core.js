@@ -83,15 +83,20 @@ export async function applySecondLanguage(translate, text, pick) {
 
 export const OR_PREFIX = 'openrouter:';
 export const FREE_ROUTER = 'openrouter/free';
-export const KEYLESS_CHAIN = ['chrome', 'microsoft', 'google'];
+// Keyless Providers with their labels, in Fallback Chain order. background.js callEntry() calls each one.
+const KEYLESS = { chrome: 'Chrome on-device', microsoft: 'Microsoft', google: 'Google' };
+export const KEYLESS_CHAIN = Object.keys(KEYLESS);
 // Keyless Providers lead even with a key: in live tests they were faster and better in Turkish than the Free Models.
 export const KEY_CHAIN = [...KEYLESS_CHAIN, OR_PREFIX + 'nvidia/nemotron-3-super-120b-a12b:free', OR_PREFIX + 'dots-studio/dots-3-note-preview:free'];
 export const defaultChain = hasKey => (hasKey ? KEY_CHAIN : KEYLESS_CHAIN);
 export const isModel = entry => entry.startsWith(OR_PREFIX);
 export const modelOf = entry => entry.slice(OR_PREFIX.length);
-
-const KEYLESS_LABELS = { chrome: 'Chrome on-device', microsoft: 'Microsoft', google: 'Google' };
-export const entryLabel = entry => KEYLESS_LABELS[entry] ?? modelOf(entry);
+export const entryLabel = entry => KEYLESS[entry] ?? modelOf(entry);
+export function entryTag(entry) {
+  if (KEYLESS_CHAIN.includes(entry)) return 'Keyless';
+  if (modelOf(entry) === FREE_ROUTER) return 'Free Router';
+  return entry.endsWith(':free') ? 'Free Model' : 'Model';
+}
 
 export const PACK_MISSING = 'Offline Pack not downloaded';
 

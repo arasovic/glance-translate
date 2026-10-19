@@ -91,6 +91,7 @@ test('chain: default chains', () => {
   assert.deepEqual(core.defaultChain(true).slice(3), ['openrouter:nvidia/nemotron-3-super-120b-a12b:free', 'openrouter:dots-studio/dots-3-note-preview:free']);
   assert.equal(core.entryLabel('openrouter:openrouter/free'), 'openrouter/free');
   assert.equal(core.entryLabel('chrome'), 'Chrome on-device');
+  assert.deepEqual(['google', 'openrouter:openrouter/free', 'openrouter:a/b:free', 'openrouter:a/b'].map(core.entryTag), ['Keyless', 'Free Router', 'Free Model', 'Model']);
 });
 
 test('chain: skip rules', () => {
