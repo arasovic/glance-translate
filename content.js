@@ -358,50 +358,16 @@
     setTimeout(() => { b.innerHTML = ICONS.copy; b.setAttribute('aria-label', 'Copy translation'); }, 1200);
   }
 
-  // speechSynthesis is shared with the page, so its state is ours only while `ours` is set.
-  let ours;
-  const stopListen = () => { if (ours) { ours = null; speechSynthesis.cancel(); } };
-
-  // Listen starts from the top, then pauses and resumes. It checks `ours` before `paused`:
-  // after cancel() during a pause, Chrome keeps speechSynthesis.paused true.
+  // Listen's button; listen.js does the speaking.
   function listenButton(text, lang) {
-    const set = (svg, label) => { b.innerHTML = svg; b.title = label; b.setAttribute('aria-label', label); };
-    const b = button('icon-button', 'Listen', ICONS.listen, () => {
-      if (!ours) { speak(text, lang, b, () => set(ICONS.listen, 'Listen')); set(ICONS.pause, 'Pause'); }
-      else if (speechSynthesis.paused) { speechSynthesis.resume(); set(ICONS.pause, 'Pause'); }
-      else { speechSynthesis.pause(); set(ICONS.listen, 'Resume'); }
-    });
+    const LOOK = { playing: [ICONS.pause, 'Pause'], paused: [ICONS.listen, 'Resume'], stopped: [ICONS.listen, 'Listen'] };
+    const b = button('icon-button', 'Listen', ICONS.listen, () => toggleListen(b, text, lang, state => {
+      const [svg, label] = LOOK[state];
+      b.innerHTML = svg;
+      b.title = label;
+      b.setAttribute('aria-label', label);
+    }));
     return b;
-  }
-
-  // Chrome lists its network voices first and the on-device ones about a second later,
-  // so the first Listen on a page waits for them, at most 1.5 s.
-  let localVoices;
-  const waitForLocalVoices = () => localVoices ??= new Promise(resolve => {
-    const done = () => { clearTimeout(timer); speechSynthesis.removeEventListener('voiceschanged', check); resolve(); };
-    const check = () => { if (speechSynthesis.getVoices().some(v => v.localService)) done(); };
-    const timer = setTimeout(done, 1500);
-    speechSynthesis.addEventListener('voiceschanged', check);
-    check();
-  });
-
-  // Prefers a voice that runs on the device, so the text stays local when possible.
-  // A network voice is never set here (Chrome may still pick one for a language without a local voice).
-  let lastSpeak = 0;
-  async function speak(text, lang, b, done) {
-    const id = ++lastSpeak;
-    await waitForLocalVoices();
-    // A newer Listen wins, and a closed or redrawn card has detached b.
-    if (id !== lastSpeak || !b.isConnected) return;
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = lang;
-    const voices = speechSynthesis.getVoices().filter(v => v.lang.toLowerCase().startsWith(lang.split('-')[0].toLowerCase()));
-    u.voice = voices.find(v => v.localService) ?? null;
-    // cancel() ends the previous utterance later, so only the current one clears `ours`.
-    u.onend = u.onerror = () => { if (ours === u) ours = null; done(); };
-    ours = u;
-    speechSynthesis.speak(u);
   }
 
   const inHost = e => host && e.composedPath().includes(host);

@@ -29,6 +29,7 @@
       ],
       "js": [
         "lang-panel.js",
+        "listen.js",
         "content.js"
       ],
       "all_frames": true,
