@@ -184,6 +184,18 @@ test('debug log: Provider errors show only their status, never their text', asyn
   assert.equal(core.debugReason('No answer within 10 s'), 'No answer within 10 s');
 });
 
+test('result words: a note without a translation, a line for each skipped entry', () => {
+  const skipped = [{ label: 'Google', reason: 'HTTP 429' }];
+  assert.deepEqual(core.describeResult({ failed: true, skipped }), {
+    failed: true, note: 'No entry in the Fallback Chain could translate this.', skipped: [{ label: 'Google', reason: 'HTTP 429', line: 'Google: HTTP 429.' }],
+  });
+  const answered = core.describeResult({ text: 'Merhaba', skipped });
+  assert.equal(answered.note, '');
+  assert.equal(answered.skipped[0].line, 'Skipped Google: HTTP 429.');
+  assert.equal(core.describeResult({ already: true, target: 'tr' }).note, 'This text is already in Turkish.');
+  assert.equal(core.describeResult({ error: 'There is no text to translate.' }).skipped, undefined);
+});
+
 test('prompt: target rule, Second Language rule, Context Sentence', () => {
   const confident = core.buildMessages({ text: 'run', pick: { confident: true, from: 'en', lang: 'tr' } });
   assert.match(confident[0].content, /into Turkish\./);

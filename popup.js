@@ -50,14 +50,13 @@ function show(res) {
   out.hidden = false;
   out.textContent = '';
   if (res.error) return out.append(line(res.error, 'err'));
-  if (res.already) out.append(line(`This text is already in ${core.languageName(res.target)}. Set a Second Language in the options to translate it anyway.`));
-  if (res.failed) out.append(line('No entry in the Fallback Chain could translate this.'));
+  if (res.note) out.append(line(res.already ? `${res.note} Set a Second Language in the options to translate it anyway.` : res.note));
   if (res.text) {
     const by = el('b', { textContent: res.answeredBy });
     out.append(el('div', { dir: 'auto', textContent: res.text }), el('span', { className: 'by' }, res.from ? `${core.languageName(res.from)}. Answered by ` : 'Answered by ', by));
   }
   for (const x of res.skipped ?? []) {
-    const p = line(`${res.failed ? '' : 'Skipped '}${x.label}: ${x.reason}.`, 'muted');
+    const p = line(x.line, 'muted');
     if (x.pack) p.append(' ', el('button', { className: 'link', textContent: 'Make this pair offline', onclick: () => openOptions(`#pack=${x.pack}`) }));
     out.append(p);
   }

@@ -177,7 +177,7 @@ function answeredBy(entry, model) {
 
 async function translate(msg) {
   const settings = await getSettings();
-  const res = await timed(settings.debug, 'translation', () => translateWith(settings, msg));
+  const res = core.describeResult(await timed(settings.debug, 'translation', () => translateWith(settings, msg)));
   if (settings.debug) {
     const { text, skipped, ...rest } = res;
     console.info('[Select Translate] result', { chars: msg.text?.trim().length, ...rest, skipped: skipped?.map(x => `${x.label}: ${core.debugReason(x.reason, x.status)}`) });

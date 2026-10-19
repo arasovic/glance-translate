@@ -294,16 +294,13 @@
     if (res.text) {
       text.textContent = res.text;
       foot.append('Answered by ', el('b', { textContent: res.answeredBy }), res.cached ? ' (cached)' : '');
-    } else if (res.already) {
+    } else if (res.note) {
       text.className = 'text note';
-      text.textContent = `This text is already in ${nameOf(res.target)}.`;
-      foot.append(el('p', {}, 'To translate it anyway, ', link('set a Second Language', '#languages'), '.'));
-    } else if (res.failed) {
-      text.className = 'text note';
-      text.textContent = 'No entry in the Fallback Chain could translate this.';
+      text.textContent = res.note;
+      if (res.already) foot.append(el('p', {}, 'To translate it anyway, ', link('set a Second Language', '#languages'), '.'));
     }
     for (const s of res.skipped ?? []) {
-      const p = el('p', { className: res.failed ? 'err' : '' }, `${res.failed ? '' : 'Skipped '}${s.label}: ${s.reason}.`);
+      const p = el('p', { className: res.failed ? 'err' : '' }, s.line);
       if (s.pack) p.append(' ', link('Make this pair offline', `#pack=${s.pack}`));
       foot.append(p);
     }

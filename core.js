@@ -163,6 +163,14 @@ export function httpError(status, body, headers = {}) {
   return Object.assign(err, { status, headers });
 }
 
+// Words the Translation Card and the Toolbar Popup both show for a result, besides the translation:
+// a note when there is no translation, and a line for each skipped entry.
+export function describeResult(res) {
+  const note = res.already ? `This text is already in ${languageName(res.target)}.` : res.failed ? 'No entry in the Fallback Chain could translate this.' : '';
+  const skipped = res.skipped?.map(s => ({ ...s, line: `${res.failed ? '' : 'Skipped '}${s.label}: ${s.reason}.` }));
+  return { ...res, note, skipped };
+}
+
 // The debug log names a Provider error by its status only: the error text can echo the Selection.
 export const debugReason = (reason, status) => (status ? `HTTP ${status}` : reason);
 
