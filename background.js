@@ -81,7 +81,7 @@ async function detect(text) {
 
 async function chromeState(pick) {
   if (!('Translator' in self)) return 'missing';
-  if (!pick.sure) return 'unknown';
+  if (!pick.confident) return 'unknown';
   try {
     return await Translator.availability({ sourceLanguage: pick.from, targetLanguage: pick.lang });
   } catch {
@@ -178,29 +178,29 @@ function answeredBy(entry, model) {
 }
 
 async function translate(msg) {
-  const s = await getSettings();
-  const res = await timed(s.debug, 'translation', () => translateWith(s, msg));
-  if (s.debug) {
+  const settings = await getSettings();
+  const res = await timed(settings.debug, 'translation', () => translateWith(settings, msg));
+  if (settings.debug) {
     const { text, skipped, ...rest } = res;
     console.info('[Select Translate] result', { chars: msg.text?.trim().length, ...rest, skipped: skipped?.map(x => `${x.label}: ${core.debugReason(x.reason, x.status)}`) });
   }
   return res;
 }
 
-async function translateWith(s, { text = '', block, start, end, entry }) {
+async function translateWith(settings, { text = '', block, start, end, entry }) {
   text = text.trim();
   const check = core.checkSelection(text);
   if (check === 'ignore') return { error: 'There is no text to translate.' };
   if (check === 'too-long') return { error: `The Selection is too long. The limit is ${core.MAX_CHARS.toLocaleString('en')} characters.` };
 
-  const chain = s.chain.map(e => ({ entry: e, label: core.entryLabel(e) }));
-  const det = await timed(s.debug, 'detect', () => detect(text));
-  const pick = core.pickOutput({ detected: det.lang, confidence: det.confidence, target: s.target, second: s.second });
-  if (s.debug) console.info('[Select Translate] detection', det, pick);
-  const base = { target: s.target, chain };
+  const chain = settings.chain.map(e => ({ entry: e, label: core.entryLabel(e) }));
+  const detection = await timed(settings.debug, 'detect', () => detect(text));
+  const pick = core.pickOutput({ detected: detection.lang, confidence: detection.confidence, target: settings.target, second: settings.second });
+  if (settings.debug) console.info('[Select Translate] detection', detection, pick);
+  const base = { target: settings.target, chain };
   if (pick.already) return { ...base, already: true, from: pick.from };
 
-  const cacheKey = `t:${pick.sure ? pick.lang : `${pick.lang}|${pick.second}`}:${text}`;
+  const cacheKey = `t:${pick.confident ? pick.lang : `${pick.lang}|${pick.second}`}:${text}`;
   if (!entry) {
     const hit = (await chrome.storage.session.get(cacheKey))[cacheKey];
     if (hit) return { ...base, ...hit, skipped: [], cached: true };
@@ -208,22 +208,22 @@ async function translateWith(s, { text = '', block, start, end, entry }) {
 
   const now = Date.now();
   const { cooldowns } = await chrome.storage.local.get('cooldowns');
-  const ctx = { text, pick, key: s.openrouterKey, context: block && core.wantsContext(text) ? core.contextSentence(block, start, end) : '' };
-  const r = await core.walkChain(entry ? [entry] : s.chain, {
-    skip: async e => core.skipReason(e, { now, cooldowns, hasKey: !!s.openrouterKey, sure: pick.sure, chrome: e === 'chrome' ? await chromeState(pick) : undefined }),
-    call: e => timed(s.debug, e, () => callEntry(e, ctx)),
+  const ctx = { text, pick, key: settings.openrouterKey, context: block && core.wantsContext(text) ? core.contextSentence(block, start, end) : '' };
+  const outcome = await core.walkChain(entry ? [entry] : settings.chain, {
+    skip: async e => core.skipReason(e, { now, cooldowns, hasKey: !!settings.openrouterKey, confident: pick.confident, chrome: e === 'chrome' ? await chromeState(pick) : undefined }),
+    call: e => timed(settings.debug, e, () => callEntry(e, ctx)),
   });
 
-  const skipped = r.skipped.map(x => ({
+  const skipped = outcome.skipped.map(x => ({
     label: core.entryLabel(x.entry),
     reason: x.reason,
     status: x.status,
     ...(x.reason === core.PACK_MISSING && { pack: `${pick.from}:${pick.lang}` }),
   }));
-  if (r.failed) return { ...base, failed: true, skipped };
-  if (r.already) return { ...base, already: true, from: r.detected, skipped };
+  if (outcome.failed) return { ...base, failed: true, skipped };
+  if (outcome.already) return { ...base, already: true, from: outcome.detected, skipped };
 
-  const result = { text: r.text, lang: r.lang, from: r.detected || pick.from || '', answeredBy: answeredBy(r.entry, r.model), entry: r.entry };
+  const result = { text: outcome.text, lang: outcome.lang, from: outcome.detected || pick.from || '', answeredBy: answeredBy(outcome.entry, outcome.model), entry: outcome.entry };
   if (!entry) await cacheSet(cacheKey, result);
   return { ...base, ...result, skipped };
 }
@@ -237,8 +237,8 @@ async function models(all) {
 const handlers = {
   translate,
   languages: async () => {
-    const s = await getSettings();
-    return { list: core.languageList(), pinned: [s.target, s.second] };
+    const settings = await getSettings();
+    return { list: core.languageList(), pinned: [settings.target, settings.second] };
   },
   openOptions: ({ hash = '' }) => chrome.tabs.create({ url: chrome.runtime.getURL(`options.html${hash}`) }).then(() => ({})),
 };

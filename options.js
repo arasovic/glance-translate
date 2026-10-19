@@ -2,10 +2,10 @@ import * as core from './core.js';
 
 const $ = id => document.getElementById(id);
 const stored = () => chrome.storage.local.get(null);
-let s = core.withDefaults(await stored(), navigator.languages);
+let settings = core.withDefaults(await stored(), navigator.languages);
 const save = async values => {
   await chrome.storage.local.set(values);
-  s = core.withDefaults(await stored(), navigator.languages);
+  settings = core.withDefaults(await stored(), navigator.languages);
 };
 
 function el(tag, props = {}, ...kids) {
@@ -20,7 +20,7 @@ const iconButton = (text, label, onClick) => {
   return b;
 };
 
-$('key').value = s.openrouterKey ?? '';
+$('key').value = settings.openrouterKey ?? '';
 const keyStatus = (text, cls = 'muted') => Object.assign($('keyStatus'), { textContent: text, className: `status ${cls}` });
 
 $('saveKey').addEventListener('click', async () => {
@@ -32,7 +32,7 @@ $('saveKey').addEventListener('click', async () => {
 });
 $('deleteKey').addEventListener('click', async () => {
   await chrome.storage.local.remove('openrouterKey');
-  s = core.withDefaults(await stored(), navigator.languages);
+  settings = core.withDefaults(await stored(), navigator.languages);
   $('key').value = '';
   keyStatus('Key deleted.');
   renderChain();
@@ -40,15 +40,15 @@ $('deleteKey').addEventListener('click', async () => {
 
 const money = n => `$${Number(n).toFixed(2)}`;
 $('testKey').addEventListener('click', async () => {
-  const key = $('key').value.trim() || s.openrouterKey;
+  const key = $('key').value.trim() || settings.openrouterKey;
   if (!key) return keyStatus('Enter a key first.', 'err');
   keyStatus('Testing…');
-  const d = await chrome.runtime.sendMessage({ type: 'testKey', key });
-  if (d?.error) return keyStatus(`The key did not work. ${d.error}`, 'err');
+  const info = await chrome.runtime.sendMessage({ type: 'testKey', key });
+  if (info?.error) return keyStatus(`The key did not work. ${info.error}`, 'err');
   const parts = ['The key works.'];
-  if (d.limit_remaining != null) parts.push(`Credit left on this key: ${money(d.limit_remaining)}.`);
-  else if (d.usage != null) parts.push(`No credit limit on this key. Used so far: ${money(d.usage)}.`);
-  const free = d.free_model_daily_requests;
+  if (info.limit_remaining != null) parts.push(`Credit left on this key: ${money(info.limit_remaining)}.`);
+  else if (info.usage != null) parts.push(`No credit limit on this key. Used so far: ${money(info.usage)}.`);
+  const free = info.free_model_daily_requests;
   if (free?.remaining != null) parts.push(`Free Model requests left today: ${free.remaining}${free.limit != null ? ` of ${free.limit}` : ''}.`);
   keyStatus(parts.join(' '), 'ok');
 });
@@ -63,9 +63,9 @@ const tagOf = entry => {
 function renderChain() {
   const list = $('chainList');
   list.textContent = '';
-  s.chain.forEach((entry, i) => {
+  settings.chain.forEach((entry, i) => {
     const move = async to => {
-      const chain = [...s.chain];
+      const chain = [...settings.chain];
       chain.splice(to, 0, chain.splice(i, 1)[0]);
       await save({ chain });
       renderChain();
@@ -73,17 +73,17 @@ function renderChain() {
     };
     const end = el('span', { className: 'end' });
     if (i > 0) end.append(iconButton('↑', `Move up ${core.entryLabel(entry)}`, () => move(i - 1)));
-    if (i < s.chain.length - 1) end.append(iconButton('↓', `Move down ${core.entryLabel(entry)}`, () => move(i + 1)));
+    if (i < settings.chain.length - 1) end.append(iconButton('↓', `Move down ${core.entryLabel(entry)}`, () => move(i + 1)));
     end.append(iconButton('✕', `Remove ${core.entryLabel(entry)}`, async () => {
-      await save({ chain: s.chain.filter(e => e !== entry) });
+      await save({ chain: settings.chain.filter(e => e !== entry) });
       renderChain();
     }));
     const li = el('li', {}, el('span', { className: 'name', textContent: core.entryLabel(entry) }), el('span', { className: 'tag', textContent: tagOf(entry) }));
-    if (core.isModel(entry) && !s.openrouterKey) li.append(el('span', { className: 'muted small', textContent: 'needs a key' }));
+    if (core.isModel(entry) && !settings.openrouterKey) li.append(el('span', { className: 'muted small', textContent: 'needs a key' }));
     li.append(end);
     list.append(li);
   });
-  if (!s.chain.length) list.append(el('li', { className: 'muted', textContent: 'The chain is empty. Add an entry or reset to default.' }));
+  if (!settings.chain.length) list.append(el('li', { className: 'muted', textContent: 'The chain is empty. Add an entry or reset to default.' }));
   fillEntryList();
 }
 
@@ -91,8 +91,8 @@ let models = [];
 function fillEntryList() {
   const list = $('entryList');
   list.textContent = '';
-  for (const entry of KEYLESS) if (!s.chain.includes(entry)) list.append(el('option', { value: core.entryLabel(entry) }));
-  for (const id of models) if (!s.chain.includes(core.OR_PREFIX + id)) list.append(el('option', { value: id }));
+  for (const entry of KEYLESS) if (!settings.chain.includes(entry)) list.append(el('option', { value: core.entryLabel(entry) }));
+  for (const id of models) if (!settings.chain.includes(core.OR_PREFIX + id)) list.append(el('option', { value: id }));
 }
 
 async function loadModels() {
@@ -116,15 +116,15 @@ $('add').addEventListener('click', async () => {
   const entry = KEYLESS.find(e => e === value.toLowerCase() || core.entryLabel(e).toLowerCase() === value.toLowerCase())
     ?? core.OR_PREFIX + value;
   if (/\s/.test(value) && !KEYLESS.includes(entry)) return ($('modelStatus').textContent = 'A Model id has no spaces, for example nvidia/nemotron-3-super-120b-a12b:free.');
-  if (s.chain.includes(entry)) return ($('modelStatus').textContent = `${core.entryLabel(entry)} is already in the chain.`);
-  await save({ chain: [...s.chain, entry] });
+  if (settings.chain.includes(entry)) return ($('modelStatus').textContent = `${core.entryLabel(entry)} is already in the chain.`);
+  await save({ chain: [...settings.chain, entry] });
   $('entry').value = '';
   renderChain();
 });
 $('entry').addEventListener('keydown', e => e.key === 'Enter' && $('add').click());
 $('resetChain').addEventListener('click', async () => {
   await chrome.storage.local.remove('chain');
-  s = core.withDefaults(await stored(), navigator.languages);
+  settings = core.withDefaults(await stored(), navigator.languages);
   renderChain();
 });
 
@@ -138,22 +138,22 @@ const showLang = (button, code) => {
 // The button opens the language panel as a popover below it, or above it when there is more room there.
 function langPicker(button, value, onPick, none) {
   showLang(button, value);
-  const pop = el('div', { className: 'lp-pop', popover: 'auto' });
+  const pop = el('div', { className: 'lang-popover', popover: 'auto' });
   button.popoverTargetElement = pop;
   button.setAttribute('aria-haspopup', 'listbox');
   const place = () => {
-    const r = button.getBoundingClientRect(), below = innerHeight - r.bottom - 12, above = r.top - 12;
+    const rect = button.getBoundingClientRect(), below = innerHeight - rect.bottom - 12, above = rect.top - 12;
     const up = below < 320 && above > below;
     pop.style.maxHeight = `${Math.min(380, up ? above : below)}px`;
-    pop.style.left = `${Math.max(8, Math.min(r.left, innerWidth - pop.offsetWidth - 8))}px`;
-    pop.style.top = up ? '' : `${r.bottom + 4}px`;
-    pop.style.bottom = up ? `${innerHeight - r.top + 4}px` : '';
+    pop.style.left = `${Math.max(8, Math.min(rect.left, innerWidth - pop.offsetWidth - 8))}px`;
+    pop.style.top = up ? '' : `${rect.bottom + 4}px`;
+    pop.style.bottom = up ? `${innerHeight - rect.top + 4}px` : '';
   };
   const close = () => { pop.hidePopover(); button.focus(); };
   pop.addEventListener('beforetoggle', e => {
     if (e.newState !== 'open') return;
     pop.replaceChildren(languagePanel({
-      list: langList, value: button.value, pinned: [s.target, s.second], none, label: button.dataset.label, onClose: close,
+      list: langList, value: button.value, pinned: [settings.target, settings.second], none, label: button.dataset.label, onClose: close,
       onPick: code => { close(); if (code !== button.value) { showLang(button, code); onPick(code); } },
     }));
   });
@@ -165,11 +165,11 @@ function langPicker(button, value, onPick, none) {
   });
   document.body.append(pop);
 }
-langPicker($('target'), s.target, async code => { await save({ target: code }); renderPacks(); });
-langPicker($('second'), s.second, code => save({ second: code }), 'None');
+langPicker($('target'), settings.target, async code => { await save({ target: code }); renderPacks(); });
+langPicker($('second'), settings.second, code => save({ second: code }), 'None');
 
-document.querySelector(`input[name=mode][value=${s.triggerMode}]`).checked = true;
-document.querySelectorAll('input[name=mode]').forEach(r => r.addEventListener('change', () => save({ triggerMode: r.value })));
+document.querySelector(`input[name=mode][value=${settings.triggerMode}]`).checked = true;
+document.querySelectorAll('input[name=mode]').forEach(radio => radio.addEventListener('change', () => save({ triggerMode: radio.value })));
 
 const command = (await chrome.commands.getAll()).find(c => c.name === 'translate-selection');
 $('shortcut').textContent = command?.shortcut || 'Not set';
@@ -180,7 +180,7 @@ const hashPair = location.hash.match(/^#pack=([\w-]+):([\w-]+)$/);
 if (hashPair) extraPairs.push([hashPair[1], hashPair[2]]);
 
 function suggestedPairs() {
-  const other = s.target === 'en' ? s.second : s.target;
+  const other = settings.target === 'en' ? settings.second : settings.target;
   return other ? [['en', other], [other, 'en']] : [];
 }
 
@@ -222,12 +222,12 @@ async function download(from, to, button, status) {
   button.disabled = true;
   status.textContent = 'Starting…';
   try {
-    const t = await Translator.create({
+    const translator = await Translator.create({
       sourceLanguage: from,
       targetLanguage: to,
       monitor: m => m.addEventListener('downloadprogress', e => (status.textContent = `${Math.round(e.loaded * 100)}%`)),
     });
-    t.destroy();
+    translator.destroy();
     button.remove();
     status.textContent = 'Ready offline';
   } catch (e) {
@@ -237,7 +237,7 @@ async function download(from, to, button, status) {
 }
 
 langPicker($('packFrom'), 'en', () => {});
-langPicker($('packTo'), s.target, () => {});
+langPicker($('packTo'), settings.target, () => {});
 $('addPack').addEventListener('click', () => {
   extraPairs.push([$('packFrom').value, $('packTo').value]);
   renderPacks(`${$('packFrom').value}:${$('packTo').value}`);
@@ -246,24 +246,24 @@ $('addPack').addEventListener('click', () => {
 function renderSites() {
   const list = $('siteList');
   list.textContent = '';
-  for (const site of s.disabledSites) {
+  for (const site of settings.disabledSites) {
     list.append(el('li', {}, el('span', { className: 'name', textContent: site }), el('span', { className: 'end' },
       iconButton('✕', `Remove ${site}`, async () => {
-        await save({ disabledSites: s.disabledSites.filter(h => h !== site) });
+        await save({ disabledSites: settings.disabledSites.filter(h => h !== site) });
         renderSites();
       }))));
   }
-  $('noSites').hidden = s.disabledSites.length > 0;
+  $('noSites').hidden = settings.disabledSites.length > 0;
 }
 
 chrome.storage.onChanged.addListener(async (changes, area) => {
   if (area !== 'local') return;
-  s = core.withDefaults(await stored(), navigator.languages);
+  settings = core.withDefaults(await stored(), navigator.languages);
   if (changes.disabledSites) renderSites();
-  if (changes.target) showLang($('target'), s.target);
+  if (changes.target) showLang($('target'), settings.target);
 });
 
-$('debugLog').checked = !!s.debug;
+$('debugLog').checked = !!settings.debug;
 $('debugLog').addEventListener('change', e => save({ debug: e.target.checked }));
 
 renderChain();

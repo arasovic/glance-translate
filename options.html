@@ -13,15 +13,15 @@
   .note { margin: 0 0 24px; color: var(--mut); max-width: 62ch; }
   section { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; margin-bottom: 16px; scroll-margin-top: 16px; }
   h2 { font-size: 15px; margin: 0 0 2px; }
-  .d { margin: 0 0 12px; font-size: 12.5px; color: var(--mut); max-width: 62ch; }
+  .desc { margin: 0 0 12px; font-size: 12.5px; color: var(--mut); max-width: 62ch; }
   .line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
   .line input:not([type=checkbox]) { flex: 1 1 220px; min-width: 0; }
   .field { display: grid; gap: 4px; margin-bottom: 12px; font-size: 13px; }
   .field .lang { max-width: 280px; }
-  .lp-pop { inset: auto; margin: 0; padding: 0; width: 280px; border: 1px solid var(--line); border-radius: 10px;
+  .lang-popover { inset: auto; margin: 0; padding: 0; width: 280px; border: 1px solid var(--line); border-radius: 10px;
             background: var(--bg); color: var(--fg); box-shadow: 0 12px 32px rgb(15 20 35 / .16), 0 2px 6px rgb(15 20 35 / .06); overflow: hidden; }
-  .lp-pop:popover-open { display: flex; flex-direction: column; }
-  .lp-pop .lp { flex: 1; }
+  .lang-popover:popover-open { display: flex; flex-direction: column; }
+  .lang-popover .lang-panel { flex: 1; }
   .rows { list-style: none; margin: 0 0 12px; padding: 0; }
   .rows li { display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 12px; border: 1px solid var(--line); border-bottom-width: 0; font-size: 13.5px; min-height: 40px; }
   .rows li:first-child { border-radius: 8px 8px 0 0; }
@@ -48,7 +48,7 @@
 
   <section id="providers">
     <h2>Providers</h2>
-    <p class="d">Your OpenRouter key stays in this browser and is sent only to openrouter.ai. Create one at <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a>.</p>
+    <p class="desc">Your OpenRouter key stays in this browser and is sent only to openrouter.ai. Create one at <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a>.</p>
     <label class="field" for="key">OpenRouter API key</label>
     <div class="line">
       <input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="sk-or-v1-…">
@@ -61,7 +61,7 @@
 
   <section id="chain">
     <h2>Fallback Chain</h2>
-    <p class="d">Tried from top to bottom until one entry answers. An entry that reports a rate limit is skipped until its Cooldown ends.</p>
+    <p class="desc">Tried from top to bottom until one entry answers. An entry that reports a rate limit is skipped until its Cooldown ends.</p>
     <ol class="rows" id="chainList"></ol>
     <div class="line">
       <input id="entry" list="entryList" spellcheck="false" placeholder="nvidia/nemotron-3-super-120b-a12b:free" aria-label="Model id or Provider to add">
@@ -79,24 +79,24 @@
     <h2>Languages</h2>
     <label class="field">Target Language <button class="lang" id="target" data-label="Target Language"></button></label>
     <label class="field">Second Language <button class="lang" id="second" data-label="Second Language"></button></label>
-    <p class="d">A Selection already in the Target Language is translated into the Second Language.</p>
+    <p class="desc">A Selection already in the Target Language is translated into the Second Language.</p>
   </section>
 
   <section id="trigger">
     <h2>Trigger</h2>
     <fieldset>
-      <legend class="d">When you select text on a page</legend>
+      <legend class="desc">When you select text on a page</legend>
       <label><input type="radio" name="mode" value="icon"> Show the Trigger Icon, translate on click</label>
       <label><input type="radio" name="mode" value="instant"> Translate right away</label>
       <label><input type="radio" name="mode" value="manual"> Do nothing; use the shortcut or the right-click menu</label>
     </fieldset>
     <p>Shortcut: <kbd id="shortcut">…</kbd> <button class="link" id="shortcuts">Change shortcut</button></p>
-    <p class="d">"Translate selection" in the right-click menu works in every mode.</p>
+    <p class="desc">"Translate selection" in the right-click menu works in every mode.</p>
   </section>
 
   <section id="packs">
     <h2>Offline Packs</h2>
-    <p class="d">An Offline Pack lets Chrome translate one language pair on this device, without sending the text anywhere. Each pack is about 80 MB. Nothing downloads until you click.</p>
+    <p class="desc">An Offline Pack lets Chrome translate one language pair on this device, without sending the text anywhere. Each pack is about 80 MB. Nothing downloads until you click.</p>
     <p class="err" id="noTranslator" hidden>This browser has no on-device Translator, so the Chrome on-device entry is always skipped.</p>
     <ul class="rows" id="packList"></ul>
     <div class="line">
@@ -107,14 +107,14 @@
 
   <section id="sites">
     <h2>Disabled Sites</h2>
-    <p class="d">No Trigger Icon and no instant translation on these sites. The shortcut and the right-click menu still work.</p>
+    <p class="desc">No Trigger Icon and no instant translation on these sites. The shortcut and the right-click menu still work.</p>
     <ul class="rows" id="siteList"></ul>
     <p class="muted small" id="noSites">No Disabled Sites. Use "Don't show on this site" in the toolbar popup to add one.</p>
   </section>
 
   <section id="debug">
     <h2>Debug</h2>
-    <p class="d">To see the log, open chrome://extensions, find Select Translate and click "service worker", then open Console. The log never holds the selected text or your key.</p>
+    <p class="desc">To see the log, open chrome://extensions, find Select Translate and click "service worker", then open Console. The log never holds the selected text or your key.</p>
     <label><input type="checkbox" id="debugLog"> Log how long each translation step takes</label>
   </section>
 </main>

@@ -26,10 +26,10 @@
   const STYLE = `
     :host { all: initial !important; position: absolute !important; top: 0 !important; left: 0 !important; z-index: 2147483647 !important; }
     * { box-sizing: border-box; }
-    .w { --acc: #2b50d8; --on-acc: #fff; --bg: #fff; --fg: #1d1f23; --mut: #626975; --line: #e3e5e9; --soft: #eef1fd; --err: #b42318;
+    .wrap { --acc: #2b50d8; --on-acc: #fff; --bg: #fff; --fg: #1d1f23; --mut: #626975; --line: #e3e5e9; --soft: #eef1fd; --err: #b42318;
          font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--fg); }
     @media (prefers-color-scheme: dark) {
-      .w { --acc: #8fa6ff; --on-acc: #14183a; --bg: #26282c; --fg: #e8e9ec; --mut: #a2a7b0; --line: #393c42; --soft: #2d3350; --err: #ff9b8f; }
+      .wrap { --acc: #8fa6ff; --on-acc: #14183a; --bg: #26282c; --fg: #e8e9ec; --mut: #a2a7b0; --line: #393c42; --soft: #2d3350; --err: #ff9b8f; }
     }
     [hidden] { display: none !important; }
     .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -40,23 +40,23 @@
     .card { position: absolute; width: 340px; max-width: calc(100vw - 16px); background: var(--bg); border: 1px solid var(--line);
             border-radius: 10px; box-shadow: 0 6px 24px rgb(15 20 35 / .14); max-height: calc(100vh - 16px); overflow: auto; }
     .card:focus-visible { outline-offset: -1px; }
-    .hd { display: flex; align-items: center; gap: 4px; padding: 8px 8px 0 14px; font-size: 12.5px; color: var(--mut); cursor: move; user-select: none; touch-action: none; }
-    .hd .lang { color: var(--fg); border-radius: 5px; padding: 2px 4px; max-width: 170px; overflow-wrap: break-word; }
+    .head { display: flex; align-items: center; gap: 4px; padding: 8px 8px 0 14px; font-size: 12.5px; color: var(--mut); cursor: move; user-select: none; touch-action: none; }
+    .head .lang { color: var(--fg); border-radius: 5px; padding: 2px 4px; max-width: 170px; overflow-wrap: break-word; }
     /* The Source Language name wraps first; the Target button wraps only when that is not enough. */
-    .hd > span { flex-shrink: 1000; }
-    .hd .lang:hover, .hd .lang[aria-expanded="true"] { background: var(--soft); }
-    .card .lp { margin-top: 6px; border-top: 1px solid var(--line); }
-    .card .lp-list { max-height: 264px; }
+    .head > span { flex-shrink: 1000; }
+    .head .lang:hover, .head .lang[aria-expanded="true"] { background: var(--soft); }
+    .card .lang-panel { margin-top: 6px; border-top: 1px solid var(--line); }
+    .card .lang-panel-list { max-height: 264px; }
     ${LANG_PANEL_CSS}
     .acts { margin-left: auto; display: flex; gap: 2px; flex: none; }
-    .ib { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 6px; color: var(--mut); }
-    .ib:hover, .ib[aria-expanded="true"] { background: var(--soft); color: var(--acc); }
-    .tx { padding: 6px 14px 10px; font-size: 15.5px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 50vh; overflow: auto; }
-    .tx.note { font-size: 14px; }
-    .ft { border-top: 1px solid var(--line); padding: 7px 14px 9px; font-size: 12px; color: var(--mut); overflow-wrap: anywhere; }
-    .ft b { font-weight: 600; color: var(--acc); }
-    .ft p { margin: 3px 0 0; }
-    .ft .err { color: var(--fg); }
+    .icon-button { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 6px; color: var(--mut); }
+    .icon-button:hover, .icon-button[aria-expanded="true"] { background: var(--soft); color: var(--acc); }
+    .text { padding: 6px 14px 10px; font-size: 15.5px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 50vh; overflow: auto; }
+    .text.note { font-size: 14px; }
+    .foot { border-top: 1px solid var(--line); padding: 7px 14px 9px; font-size: 12px; color: var(--mut); overflow-wrap: anywhere; }
+    .foot b { font-weight: 600; color: var(--acc); }
+    .foot p { margin: 3px 0 0; }
+    .foot .err { color: var(--fg); }
     .link { color: var(--acc); text-decoration: underline; text-underline-offset: 2px; font-size: inherit; }
     .menu { margin: 4px 8px 0; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
     .menu button { display: block; width: 100%; text-align: left; padding: 5px 8px; border-radius: 5px; font-size: 13px; overflow-wrap: anywhere; }
@@ -69,13 +69,13 @@
     @media (prefers-reduced-motion: reduce) { .busy i { animation: none; opacity: .7; } }
   `;
 
-  let host, root, icon, card, live, last, langs, dwell, moved;
+  let host, root, icon, card, live, lastSelection, langs, dwell, moved;
 
   function ensureHost() {
     if (!host) {
       host = document.createElement('select-translate');
       root = host.attachShadow({ mode: 'closed' });
-      root.innerHTML = `<style>${STYLE}</style><div class="w">
+      root.innerHTML = `<style>${STYLE}</style><div class="wrap">
         <button class="icon" hidden aria-label="Translate selection" title="Translate selection">${GLYPH}</button>
         <div class="card" role="dialog" aria-label="Translation" tabindex="-1" hidden></div>
         <div class="sr" aria-live="polite"></div></div>`;
@@ -83,7 +83,7 @@
       card = root.querySelector('.card');
       live = root.querySelector('.sr');
       icon.addEventListener('mousedown', e => e.preventDefault()); // Keep the page Selection.
-      icon.addEventListener('click', () => { hideIcon(); translateSelection(last); });
+      icon.addEventListener('click', () => { hideIcon(); translateSelection(lastSelection); });
       // Resting the mouse on the icon also starts the translation; a pass across it does not.
       icon.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') dwell = setTimeout(() => icon.click(), 200); });
       icon.addEventListener('pointerleave', () => clearTimeout(dwell));
@@ -105,14 +105,14 @@
   }
 
   const isEditable = node => {
-    const el = node?.nodeType === 1 ? node : node?.parentElement;
-    return !!el && (el.isContentEditable || !!el.closest('input, textarea'));
+    const element = node?.nodeType === 1 ? node : node?.parentElement;
+    return !!element && (element.isContentEditable || !!element.closest('input, textarea'));
   };
 
   function blockOf(node) {
-    let el = node.nodeType === 1 ? node : node.parentElement;
-    while (el && el !== document.body && getComputedStyle(el).display.startsWith('inline')) el = el.parentElement;
-    return el ?? document.body;
+    let element = node.nodeType === 1 ? node : node.parentElement;
+    while (element && element !== document.body && getComputedStyle(element).display.startsWith('inline')) element = element.parentElement;
+    return element ?? document.body;
   }
 
   // The Selection, its position and, for 1–3 words, the text block around it for the Context Sentence.
@@ -128,12 +128,12 @@
     const box = range.getBoundingClientRect();
     const out = { text, rect, box };
     if (text.trim().split(/\s+/).length <= 3) {
-      const el = blockOf(range.startContainer);
+      const container = blockOf(range.startContainer);
       const before = document.createRange();
-      before.setStart(el, 0);
+      before.setStart(container, 0);
       before.setEnd(range.startContainer, range.startOffset);
       const all = document.createRange();
-      all.selectNodeContents(el);
+      all.selectNodeContents(container);
       const block = all.toString();
       const start = before.toString().length;
       const end = start + range.toString().length;
@@ -165,12 +165,12 @@
 
   // Dragging the header moves the card; it stays there until it closes.
   function dragCard(e) {
-    if (e.button !== 0 || !e.target.closest('.hd') || e.target.closest('button, select')) return;
+    if (e.button !== 0 || !e.target.closest('.head') || e.target.closest('button, select')) return;
     e.preventDefault();
-    const r = card.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;
+    const rect = card.getBoundingClientRect(), dx = e.clientX - rect.left, dy = e.clientY - rect.top;
     const move = m => {
       moved = true;
-      card.style.left = `${Math.max(0, Math.min(m.clientX - dx, innerWidth - r.width)) + scrollX}px`;
+      card.style.left = `${Math.max(0, Math.min(m.clientX - dx, innerWidth - rect.width)) + scrollX}px`;
       card.style.top = `${Math.max(0, Math.min(m.clientY - dy, innerHeight - 40)) + scrollY}px`;
     };
     card.setPointerCapture(e.pointerId);
@@ -188,8 +188,8 @@
 
   async function translateSelection(sel, { entry, keyboard } = {}) {
     if (!sel) return;
-    if (sel !== last) moved = false;
-    last = sel;
+    if (sel !== lastSelection) moved = false;
+    lastSelection = sel;
     ensureHost();
     hideIcon();
     card.hidden = false;
@@ -199,7 +199,7 @@
     placeCard(sel.box);
     if (keyboard) card.focus();
     const [res] = await Promise.all([send({ type: 'translate', text: sel.text, block: sel.block, start: sel.start, end: sel.end, entry }), loadLangs()]);
-    if (last !== sel || card.hidden) return;
+    if (lastSelection !== sel || card.hidden) return;
     render(res);
     card.removeAttribute('aria-busy');
     placeCard(sel.box);
@@ -225,24 +225,24 @@
           closePanel();
           if (code === target) return b.focus();
           await chrome.storage.local.set({ target: code });
-          translateSelection(last, { keyboard: true });
+          translateSelection(lastSelection, { keyboard: true });
         },
       });
-      for (const x of card.querySelectorAll('.tx, .ft')) x.hidden = true;
-      card.querySelector('.hd').after(panel);
+      for (const x of card.querySelectorAll('.text, .foot')) x.hidden = true;
+      card.querySelector('.head').after(panel);
       b.setAttribute('aria-expanded', 'true');
-      placeCard(last.box);
+      placeCard(lastSelection.box);
     });
     return b;
   }
 
   function closePanel() {
-    const panel = card.querySelector('.lp');
+    const panel = card.querySelector('.lang-panel');
     if (!panel) return false;
     panel.remove();
-    for (const x of card.querySelectorAll('.tx, .ft')) x.hidden = false;
-    card.querySelector('.hd .lang')?.setAttribute('aria-expanded', 'false');
-    placeCard(last.box);
+    for (const x of card.querySelectorAll('.text, .foot')) x.hidden = false;
+    card.querySelector('.head .lang')?.setAttribute('aria-expanded', 'false');
+    placeCard(lastSelection.box);
     return true;
   }
 
@@ -267,50 +267,50 @@
     stopListen();
     card.textContent = '';
     if (res.error) {
-      card.append(el('div', { className: 'tx note', textContent: res.error }));
+      card.append(el('div', { className: 'text note', textContent: res.error }));
       return announce(res.error);
     }
-    const tx = el('div', { className: 'tx', dir: 'auto' });
-    const hd = el('div', { className: 'hd' });
-    if (res.from) hd.append(el('span', { textContent: nameOf(res.from) }), ' to ');
-    else hd.append('To ');
-    hd.append(targetButton(res.target));
+    const text = el('div', { className: 'text', dir: 'auto' });
+    const head = el('div', { className: 'head' });
+    if (res.from) head.append(el('span', { textContent: nameOf(res.from) }), ' to ');
+    else head.append('To ');
+    head.append(targetButton(res.target));
     const acts = el('div', { className: 'acts' });
-    hd.append(acts);
-    card.append(hd);
+    head.append(acts);
+    card.append(head);
 
     if (res.text) {
-      const copy = button('ib', 'Copy translation', ICONS.copy, () => copyText(res.text, copy));
+      const copy = button('icon-button', 'Copy translation', ICONS.copy, () => copyText(res.text, copy));
       acts.append(copy, listenButton(res.text, res.lang));
     }
     const others = (res.chain ?? []).filter(c => c.entry !== res.entry);
     if (others.length) {
-      const more = button('ib', 'Translate with another entry', ICONS.more, () => toggleMenu(more, others));
+      const more = button('icon-button', 'Translate with another entry', ICONS.more, () => toggleMenu(more, others));
       more.setAttribute('aria-haspopup', 'menu');
       more.setAttribute('aria-expanded', 'false');
       acts.append(more);
     }
-    card.append(tx);
+    card.append(text);
 
-    const ft = el('div', { className: 'ft' });
+    const foot = el('div', { className: 'foot' });
     if (res.text) {
-      tx.textContent = res.text;
-      ft.append('Answered by ', el('b', { textContent: res.answeredBy }), res.cached ? ' (cached)' : '');
+      text.textContent = res.text;
+      foot.append('Answered by ', el('b', { textContent: res.answeredBy }), res.cached ? ' (cached)' : '');
     } else if (res.already) {
-      tx.className = 'tx note';
-      tx.textContent = `This text is already in ${nameOf(res.target)}.`;
-      ft.append(el('p', {}, 'To translate it anyway, ', link('set a Second Language', '#languages'), '.'));
+      text.className = 'text note';
+      text.textContent = `This text is already in ${nameOf(res.target)}.`;
+      foot.append(el('p', {}, 'To translate it anyway, ', link('set a Second Language', '#languages'), '.'));
     } else if (res.failed) {
-      tx.className = 'tx note';
-      tx.textContent = 'No entry in the Fallback Chain could translate this.';
+      text.className = 'text note';
+      text.textContent = 'No entry in the Fallback Chain could translate this.';
     }
     for (const s of res.skipped ?? []) {
       const p = el('p', { className: res.failed ? 'err' : '' }, `${res.failed ? '' : 'Skipped '}${s.label}: ${s.reason}.`);
       if (s.pack) p.append(' ', link('Make this pair offline', `#pack=${s.pack}`));
-      ft.append(p);
+      foot.append(p);
     }
-    if (ft.childNodes.length) card.append(ft);
-    announce(tx.textContent, res.text ? res.lang : 'en');
+    if (foot.childNodes.length) card.append(foot);
+    announce(text.textContent, res.text ? res.lang : 'en');
   }
 
   function link(text, hash) {
@@ -322,7 +322,7 @@
   function closeMenu() {
     const menu = card.querySelector('.menu');
     menu?.remove();
-    card.querySelector('.hd [aria-haspopup=menu]')?.setAttribute('aria-expanded', 'false');
+    card.querySelector('.head [aria-haspopup=menu]')?.setAttribute('aria-expanded', 'false');
     return !!menu;
   }
 
@@ -334,13 +334,13 @@
     for (const o of others) {
       const b = el('button', { textContent: o.label });
       b.setAttribute('role', 'menuitem');
-      b.addEventListener('click', () => translateSelection(last, { entry: o.entry, keyboard: true }));
+      b.addEventListener('click', () => translateSelection(lastSelection, { entry: o.entry, keyboard: true }));
       menu.append(b);
     }
-    card.querySelector('.hd').after(menu);
+    card.querySelector('.head').after(menu);
     more.setAttribute('aria-expanded', 'true');
     menu.querySelector('[role=menuitem]').focus();
-    placeCard(last.box);
+    placeCard(lastSelection.box);
   }
 
   async function copyText(text, b) {
@@ -366,7 +366,7 @@
   // after cancel() during a pause, Chrome keeps speechSynthesis.paused true.
   function listenButton(text, lang) {
     const set = (svg, label) => { b.innerHTML = svg; b.title = label; b.setAttribute('aria-label', label); };
-    const b = button('ib', 'Listen', ICONS.listen, () => {
+    const b = button('icon-button', 'Listen', ICONS.listen, () => {
       if (!ours) { speak(text, lang, b, () => set(ICONS.listen, 'Listen')); set(ICONS.pause, 'Pause'); }
       else if (speechSynthesis.paused) { speechSynthesis.resume(); set(ICONS.pause, 'Pause'); }
       else { speechSynthesis.pause(); set(ICONS.listen, 'Resume'); }
@@ -408,7 +408,7 @@
 
   document.addEventListener('mousedown', e => { if (!inHost(e)) closeAll(); }, true);
   // Esc in the language panel closes only the panel (lang-panel.js handles it).
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && card && !card.hidden && !card.querySelector('.lp')) closeAll(); }, true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && card && !card.hidden && !card.querySelector('.lang-panel')) closeAll(); }, true);
   addEventListener('scroll', hideIcon, { passive: true, capture: true });
   // A click in another frame of the tab never reaches this document; this window loses focus instead.
   // The top frame keeps the card when the whole page loses focus (another tab or app); an iframe cannot tell the two apart.
@@ -419,7 +419,7 @@
     setTimeout(() => {
       const sel = readSelection();
       if (!sel || !autoTrigger()) return;
-      last = sel;
+      lastSelection = sel;
       if (settings.triggerMode === 'instant') translateSelection(sel);
       else placeIcon(sel);
     });

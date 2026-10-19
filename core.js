@@ -63,20 +63,20 @@ export function checkSelection(text) {
   return text.length > MAX_CHARS ? 'too-long' : 'ok';
 }
 
-// Decides the output language. `sure` is false when detection was below MIN_CONFIDENCE;
+// Decides the output language. `confident` is false when detection was below MIN_CONFIDENCE;
 // then the answering Provider's own detection applies the Second Language rule.
 export function pickOutput({ detected, confidence, target, second }) {
-  if (!detected || detected === 'und' || !(confidence >= MIN_CONFIDENCE)) return { sure: false, lang: target, second };
+  if (!detected || detected === 'und' || !(confidence >= MIN_CONFIDENCE)) return { confident: false, lang: target, second };
   const from = canonical(detected);
-  if (!sameLanguage(from, target)) return { sure: true, from, lang: target };
-  return second ? { sure: true, from, lang: second } : { sure: true, from, already: true };
+  if (!sameLanguage(from, target)) return { confident: true, from, lang: target };
+  return second ? { confident: true, from, lang: second } : { confident: true, from, already: true };
 }
 
 // For Keyless Providers when detection was unsure: if the Provider says the text is
 // already in the Target Language, ask again with the Second Language.
 export async function applySecondLanguage(translate, text, pick) {
   const first = await translate(text, pick.lang);
-  if (pick.sure || !sameLanguage(first.detected, pick.lang)) return { ...first, lang: pick.lang };
+  if (pick.confident || !sameLanguage(first.detected, pick.lang)) return { ...first, lang: pick.lang };
   if (!pick.second) return { ...first, already: true };
   return { ...(await translate(text, pick.second)), lang: pick.second };
 }
@@ -96,12 +96,12 @@ export const entryLabel = entry => KEYLESS_LABELS[entry] ?? modelOf(entry);
 export const PACK_MISSING = 'Offline Pack not downloaded';
 
 // `chrome` is the Translator availability for the pair ('available', 'downloadable', ...) or 'missing'.
-export function skipReason(entry, { now, cooldowns = {}, hasKey, sure, chrome }) {
+export function skipReason(entry, { now, cooldowns = {}, hasKey, confident, chrome }) {
   if (cooldowns[entry] > now) return `in Cooldown until ${new Date(cooldowns[entry]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
   if (isModel(entry) && !hasKey) return 'no OpenRouter key';
   if (entry !== 'chrome') return '';
   if (chrome === 'missing') return 'Translator API not available';
-  if (!sure) return 'language detection unsure';
+  if (!confident) return 'language detection unsure';
   if (chrome === 'unavailable') return 'language pair not supported';
   return chrome === 'available' ? '' : PACK_MISSING;
 }
@@ -124,8 +124,8 @@ export async function walkChain(chain, { skip, call }) {
 export const DEFAULT_COOLDOWN_MS = 60_000;
 
 export const nextUtcMidnight = now => {
-  const d = new Date(now);
-  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1);
+  const date = new Date(now);
+  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1);
 };
 
 // X-RateLimit-Reset is read by magnitude: ms epoch, s epoch, or seconds from now.
@@ -167,10 +167,10 @@ export function httpError(status, body, headers = {}) {
 export const debugReason = (reason, status) => (status ? `HTTP ${status}` : reason);
 
 export function parseMicrosoft(json) {
-  const r = json?.[0];
-  const text = r?.translations?.[0]?.text;
+  const first = json?.[0];
+  const text = first?.translations?.[0]?.text;
   if (typeof text !== 'string') throw new Error('Unexpected Microsoft response');
-  return { text, detected: canonical(r.detectedLanguage?.language, 'microsoft') };
+  return { text, detected: canonical(first.detectedLanguage?.language, 'microsoft') };
 }
 
 export function parseGoogle(json) {
@@ -204,7 +204,7 @@ export function buildMessages({ text, pick, context }) {
   const target = languageName(pick.lang);
   const task = [
     `Translate the text into ${target}.`,
-    !pick.sure && pick.second && `If the text is already in ${target}, translate it into ${languageName(pick.second)} instead.`,
+    !pick.confident && pick.second && `If the text is already in ${target}, translate it into ${languageName(pick.second)} instead.`,
   ].filter(Boolean).join(' ');
   const rules = [
     task,

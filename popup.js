@@ -1,15 +1,15 @@
 import * as core from './core.js';
 
 const $ = id => document.getElementById(id);
-const s = core.withDefaults(await chrome.storage.local.get(null), navigator.languages);
+const settings = core.withDefaults(await chrome.storage.local.get(null), navigator.languages);
 const save = values => chrome.storage.local.set(values);
 
-$('enabled').checked = s.enabled;
+$('enabled').checked = settings.enabled;
 $('enabled').addEventListener('change', e => save({ enabled: e.target.checked }));
 
 const showTarget = () => {
-  $('target').textContent = core.languageName(s.target);
-  $('target').setAttribute('aria-label', `Target Language: ${core.languageName(s.target)}`);
+  $('target').textContent = core.languageName(settings.target);
+  $('target').setAttribute('aria-label', `Target Language: ${core.languageName(settings.target)}`);
 };
 showTarget();
 // The language panel covers the popup instead of opening below the button: the popup window is too short for a list.
@@ -27,11 +27,11 @@ $('target').addEventListener('click', () => {
   };
   sheet.querySelector('button').addEventListener('click', close);
   sheet.append(languagePanel({
-    list: core.languageList(), value: s.target, pinned: [s.target, s.second], label: 'Target Language', onClose: close,
+    list: core.languageList(), value: settings.target, pinned: [settings.target, settings.second], label: 'Target Language', onClose: close,
     onPick: async code => {
       close();
-      if (code === s.target) return;
-      s.target = code;
+      if (code === settings.target) return;
+      settings.target = code;
       showTarget();
       await save({ target: code });
       if ($('text').value.trim()) translate();
@@ -106,15 +106,15 @@ const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 const site = tab && await chrome.tabs.sendMessage(tab.id, { type: 'host' }, { frameId: 0 }).then(r => r?.host, () => null);
 if (site) {
   const label = () => {
-    const off = s.disabledSites.includes(site);
+    const off = settings.disabledSites.includes(site);
     $('site').textContent = off ? `Show on ${site}` : `Don't show on ${site}`;
     $('site').title = off ? `Show the Trigger Icon and instant translation on ${site} again.` : `Hide the Trigger Icon and instant translation on ${site}. The shortcut and right-click still translate.`;
   };
   $('site').hidden = false;
   label();
   $('site').addEventListener('click', async () => {
-    s.disabledSites = s.disabledSites.includes(site) ? s.disabledSites.filter(h => h !== site) : [...s.disabledSites, site];
-    await save({ disabledSites: s.disabledSites });
+    settings.disabledSites = settings.disabledSites.includes(site) ? settings.disabledSites.filter(h => h !== site) : [...settings.disabledSites, site];
+    await save({ disabledSites: settings.disabledSites });
     label();
   });
 }
