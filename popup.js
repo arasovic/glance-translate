@@ -41,7 +41,7 @@ $('target').addEventListener('click', () => {
 });
 
 $('options').addEventListener('click', () => chrome.runtime.openOptionsPage());
-const openOptions = hash => chrome.tabs.create({ url: chrome.runtime.getURL(`options.html${hash}`) });
+const openOptions = hash => chrome.runtime.sendMessage({ type: 'openOptions', hash });
 
 const line = (text, cls = '') => el('p', { className: `small ${cls}`, textContent: text });
 

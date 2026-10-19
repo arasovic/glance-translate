@@ -240,10 +240,14 @@
     return true;
   }
 
-  function button(cls, label, svg, onClick) {
-    const b = el('button', { className: cls, title: label });
-    b.setAttribute('aria-label', label);
+  const setIcon = (b, svg, label) => {
     b.innerHTML = svg;
+    b.title = label;
+    b.setAttribute('aria-label', label);
+  };
+  function iconButton(label, svg, onClick) {
+    const b = el('button', { className: 'icon-button' });
+    setIcon(b, svg, label);
     b.addEventListener('click', onClick);
     return b;
   }
@@ -274,12 +278,12 @@
     card.append(head);
 
     if (res.text) {
-      const copy = button('icon-button', 'Copy translation', ICONS.copy, () => copyText(res.text, copy));
+      const copy = iconButton('Copy translation', ICONS.copy, () => copyText(res.text, copy));
       acts.append(copy, listenButton(res.text, res.lang));
     }
     const others = (res.chain ?? []).filter(c => c.entry !== res.entry);
     if (others.length) {
-      const more = button('icon-button', 'Translate with another entry', ICONS.more, () => toggleMenu(more, others));
+      const more = iconButton('Translate with another entry', ICONS.more, () => toggleMenu(more, others));
       more.setAttribute('aria-haspopup', 'menu');
       more.setAttribute('aria-expanded', 'false');
       acts.append(more);
@@ -355,12 +359,7 @@
   // Listen's button; listen.js does the speaking.
   function listenButton(text, lang) {
     const LOOK = { playing: [ICONS.pause, 'Pause'], paused: [ICONS.listen, 'Resume'], stopped: [ICONS.listen, 'Listen'] };
-    const b = button('icon-button', 'Listen', ICONS.listen, () => toggleListen(b, text, lang, state => {
-      const [svg, label] = LOOK[state];
-      b.innerHTML = svg;
-      b.title = label;
-      b.setAttribute('aria-label', label);
-    }));
+    const b = iconButton('Listen', ICONS.listen, () => toggleListen(b, text, lang, state => setIcon(b, ...LOOK[state])));
     return b;
   }
 
