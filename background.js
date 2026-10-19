@@ -13,7 +13,8 @@ chrome.runtime.onInstalled.addListener(({ reason }) => {
 // Pages without our content script (chrome://, Web Store, PDF viewer) fall back to the Toolbar Popup.
 async function openPopup(text) {
   if (text) await chrome.storage.session.set({ pendingText: text });
-  chrome.action.openPopup().catch(() => {});
+  // A popup that failed to open must not translate this text when the user opens it later.
+  chrome.action.openPopup().catch(() => chrome.storage.session.remove('pendingText'));
 }
 
 // sendMessage rejects only when the frame has no content script. A content script that declines
