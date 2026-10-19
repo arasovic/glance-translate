@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Glance Translate",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Translate selected text where you read it, with Chrome's on-device translator or keyless services. Add an AI key to explain it.",
   "icons": {
     "16": "icons/icon-16.png",
