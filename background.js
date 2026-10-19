@@ -16,9 +16,11 @@ async function openPopup(text) {
   chrome.action.openPopup().catch(() => {});
 }
 
+// sendMessage rejects only when the frame has no content script. A content script that declines
+// (a Selection in input, textarea or contenteditable) gets no popup either.
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   chrome.tabs.sendMessage(tab.id, { type: 'translateSelection' }, { frameId: info.frameId })
-    .then(answered => answered || openPopup(info.selectionText), () => openPopup(info.selectionText));
+    .catch(() => openPopup(info.selectionText));
 });
 
 // The frame holding the Selection answers; when none does (the reply is undefined), the popup opens.
