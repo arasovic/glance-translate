@@ -32,6 +32,7 @@
       .w { --acc: #8fa6ff; --on-acc: #14183a; --bg: #26282c; --fg: #e8e9ec; --mut: #a2a7b0; --line: #393c42; --soft: #2d3350; --err: #ff9b8f; }
     }
     [hidden] { display: none !important; }
+    .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
     button { font: inherit; color: inherit; background: none; border: 0; margin: 0; padding: 0; cursor: pointer; }
     :focus-visible { outline: 2px solid var(--acc); outline-offset: 1px; }
     .icon { position: absolute; width: 26px; height: 26px; border-radius: 7px; background: var(--acc); color: var(--on-acc);
@@ -68,7 +69,7 @@
     @media (prefers-reduced-motion: reduce) { .busy i { animation: none; opacity: .7; } }
   `;
 
-  let host, root, icon, card, last, langs, dwell, moved;
+  let host, root, icon, card, live, last, langs, dwell, moved;
 
   function ensureHost() {
     if (!host) {
@@ -76,9 +77,11 @@
       root = host.attachShadow({ mode: 'closed' });
       root.innerHTML = `<style>${STYLE}</style><div class="w">
         <button class="icon" hidden aria-label="Translate selection" title="Translate selection">${GLYPH}</button>
-        <div class="card" role="dialog" aria-label="Translation" tabindex="-1" hidden></div></div>`;
+        <div class="card" role="dialog" aria-label="Translation" tabindex="-1" hidden></div>
+        <div class="sr" aria-live="polite"></div></div>`;
       icon = root.querySelector('.icon');
       card = root.querySelector('.card');
+      live = root.querySelector('.sr');
       icon.addEventListener('mousedown', e => e.preventDefault()); // Keep the page Selection.
       icon.addEventListener('click', () => { hideIcon(); translateSelection(last); });
       // Resting the mouse on the icon also starts the translation; a pass across it does not.
@@ -97,6 +100,7 @@
     if (!card || card.hidden) return;
     card.hidden = true;
     card.textContent = '';
+    live.textContent = '';
     stopListen();
   }
 
@@ -189,6 +193,7 @@
     ensureHost();
     hideIcon();
     card.hidden = false;
+    live.textContent = ''; // Cleared first, so the same translation again is still announced.
     card.setAttribute('aria-busy', 'true');
     card.replaceChildren(el('div', { className: 'busy', title: 'Translating…' }, el('i'), el('i'), el('i')));
     placeCard(sel.box);
@@ -251,15 +256,21 @@
 
   const nameOf = code => langs?.list?.find(([c]) => c === code)?.[1] || code;
 
+  // Screen readers often skip a live region that is inserted already filled, so the card
+  // announces through one region that lives as long as the host.
+  function announce(text, lang = 'en') {
+    live.lang = lang;
+    live.textContent = text;
+  }
+
   function render(res) {
     stopListen();
     card.textContent = '';
     if (res.error) {
       card.append(el('div', { className: 'tx note', textContent: res.error }));
-      return;
+      return announce(res.error);
     }
     const tx = el('div', { className: 'tx', dir: 'auto' });
-    tx.setAttribute('aria-live', 'polite');
     const hd = el('div', { className: 'hd' });
     if (res.from) hd.append(el('span', { textContent: nameOf(res.from) }), ' to ');
     else hd.append('To ');
@@ -299,6 +310,7 @@
       ft.append(p);
     }
     if (ft.childNodes.length) card.append(ft);
+    announce(tx.textContent, res.text ? res.lang : 'en');
   }
 
   function link(text, hash) {
