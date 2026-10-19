@@ -1,6 +1,6 @@
 # Privacy policy
 
-Select Translate translates text you select on a web page. It has no server of its own, no telemetry and no analytics. This page lists every piece of data the extension handles and where it goes.
+Glance Translate translates text you select on a web page. It has no server of its own, no telemetry and no analytics. This page lists every piece of data the extension handles and where it goes.
 
 ## What leaves your browser
 

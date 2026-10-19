@@ -73,7 +73,7 @@
 
   function ensureHost() {
     if (!host) {
-      host = document.createElement('select-translate');
+      host = document.createElement('glance-translate');
       root = host.attachShadow({ mode: 'closed' });
       root.innerHTML = `<style>${STYLE}</style><div class="wrap">
         <button class="icon" hidden aria-label="Translate selection" title="Translate selection">${GLYPH}</button>
@@ -178,7 +178,7 @@
     card.addEventListener('lostpointercapture', () => card.removeEventListener('pointermove', move), { once: true });
   }
 
-  const send = msg => chrome.runtime.sendMessage(msg).catch(e => ({ error: /context invalidated/i.test(e.message) ? 'Select Translate was updated. Reload this page to use it.' : e.message }));
+  const send = msg => chrome.runtime.sendMessage(msg).catch(e => ({ error: /context invalidated/i.test(e.message) ? 'Glance Translate was updated. Reload this page to use it.' : e.message }));
 
   async function translateSelection(sel, { entry, keyboard } = {}) {
     if (!sel) return;

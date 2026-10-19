@@ -108,7 +108,7 @@ async function openRouter(model, { text, pick, context, key }) {
   const messages = core.buildMessages({ text, pick, context });
   const send = reasoning => fetchJson(`${OPENROUTER}/chat/completions`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', 'X-OpenRouter-Title': 'Select Translate' },
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', 'X-OpenRouter-Title': 'Glance Translate' },
     body: JSON.stringify(core.openRouterBody(model, messages, text.length, reasoning)),
   }, Math.min(TIMEOUT_MS, 10_000 + text.length * 10)); // Free Models stall for 15–30 s at times; move on sooner on short text.
   let json;
@@ -158,10 +158,10 @@ async function timed(on, label, fn) {
   const ms = () => Math.round(performance.now() - start);
   try {
     const value = await fn();
-    if (on) console.info(`[Select Translate] ${label}: ${ms()} ms`);
+    if (on) console.info(`[Glance Translate] ${label}: ${ms()} ms`);
     return value;
   } catch (e) {
-    if (on) console.info(`[Select Translate] ${label}: failed after ${ms()} ms (${core.debugReason(e.message, e.status)})`);
+    if (on) console.info(`[Glance Translate] ${label}: failed after ${ms()} ms (${core.debugReason(e.message, e.status)})`);
     throw e;
   }
 }
@@ -183,7 +183,7 @@ async function translate(msg) {
   const res = core.describeResult(await timed(settings.debug, 'translation', () => translateWith(settings, msg)));
   if (settings.debug) {
     const { text, skipped, ...rest } = res;
-    console.info('[Select Translate] result', { chars: msg.text?.trim().length, ...rest, skipped: skipped?.map(x => `${x.label}: ${core.debugReason(x.reason, x.status)}`) });
+    console.info('[Glance Translate] result', { chars: msg.text?.trim().length, ...rest, skipped: skipped?.map(x => `${x.label}: ${core.debugReason(x.reason, x.status)}`) });
   }
   return res;
 }
@@ -197,7 +197,7 @@ async function translateWith(settings, { text = '', block, start, end, entry }) 
   const chain = settings.chain.map(e => ({ entry: e, label: core.entryLabel(e) }));
   const detection = await timed(settings.debug, 'detect', () => detect(text));
   const pick = core.pickOutput({ detected: detection.lang, confidence: detection.confidence, target: settings.target, second: settings.second });
-  if (settings.debug) console.info('[Select Translate] detection', detection, pick);
+  if (settings.debug) console.info('[Glance Translate] detection', detection, pick);
   const base = { target: settings.target, chain };
   if (pick.already) return { ...base, already: true, from: pick.from };
 
