@@ -352,18 +352,32 @@
   function listenButton(text, lang) {
     const set = (svg, label) => { b.innerHTML = svg; b.title = label; b.setAttribute('aria-label', label); };
     const b = button('ib', 'Listen', ICONS.listen, () => {
-      if (!speechSynthesis.speaking) { speak(text, lang, () => set(ICONS.listen, 'Listen')); set(ICONS.pause, 'Pause'); }
+      if (!speechSynthesis.speaking) { speak(text, lang, b, () => set(ICONS.listen, 'Listen')); set(ICONS.pause, 'Pause'); }
       else if (speechSynthesis.paused) { speechSynthesis.resume(); set(ICONS.pause, 'Pause'); }
       else { speechSynthesis.pause(); set(ICONS.listen, 'Resume'); }
     });
     return b;
   }
 
+  // Chrome lists its network voices first and the on-device ones about a second later,
+  // so the first Listen on a page waits for them, at most 1.5 s.
+  let localVoices;
+  const waitForLocalVoices = () => localVoices ??= new Promise(resolve => {
+    const done = () => { clearTimeout(timer); speechSynthesis.removeEventListener('voiceschanged', check); resolve(); };
+    const check = () => { if (speechSynthesis.getVoices().some(v => v.localService)) done(); };
+    const timer = setTimeout(done, 1500);
+    speechSynthesis.addEventListener('voiceschanged', check);
+    check();
+  });
+
   // Prefers a voice that runs on the device, so the text stays local when possible.
-  // Chrome lists its network voices first and the on-device ones about a second later.
-  // Without a voice, Chrome holds the utterance for that list and picks an on-device voice,
-  // so a network voice is never set here (a language with only a network voice can still get one).
-  function speak(text, lang, done) {
+  // A network voice is never set here (Chrome may still pick one for a language without a local voice).
+  let lastSpeak = 0;
+  async function speak(text, lang, b, done) {
+    const id = ++lastSpeak;
+    await waitForLocalVoices();
+    // A newer Listen wins, and a closed or redrawn card has detached b.
+    if (id !== lastSpeak || !b.isConnected) return;
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = lang;
