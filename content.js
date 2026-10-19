@@ -94,11 +94,10 @@
   function closeAll() {
     hideIcon();
     moved = false;
-    // Our speech plays only while the card is open; otherwise the speech is the page's own.
     if (!card || card.hidden) return;
     card.hidden = true;
     card.textContent = '';
-    speechSynthesis.cancel();
+    stopListen();
   }
 
   const isEditable = node => {
@@ -253,7 +252,7 @@
   const nameOf = code => langs?.list?.find(([c]) => c === code)?.[1] || code;
 
   function render(res) {
-    speechSynthesis.cancel();
+    stopListen();
     card.textContent = '';
     if (res.error) {
       card.append(el('div', { className: 'tx note', textContent: res.error }));
@@ -347,12 +346,16 @@
     setTimeout(() => { b.innerHTML = ICONS.copy; b.setAttribute('aria-label', 'Copy translation'); }, 1200);
   }
 
-  // Listen starts from the top, then pauses and resumes. It checks speaking first:
+  // speechSynthesis is shared with the page, so its state is ours only while `ours` is set.
+  let ours;
+  const stopListen = () => { if (ours) { ours = null; speechSynthesis.cancel(); } };
+
+  // Listen starts from the top, then pauses and resumes. It checks `ours` before `paused`:
   // after cancel() during a pause, Chrome keeps speechSynthesis.paused true.
   function listenButton(text, lang) {
     const set = (svg, label) => { b.innerHTML = svg; b.title = label; b.setAttribute('aria-label', label); };
     const b = button('ib', 'Listen', ICONS.listen, () => {
-      if (!speechSynthesis.speaking) { speak(text, lang, b, () => set(ICONS.listen, 'Listen')); set(ICONS.pause, 'Pause'); }
+      if (!ours) { speak(text, lang, b, () => set(ICONS.listen, 'Listen')); set(ICONS.pause, 'Pause'); }
       else if (speechSynthesis.paused) { speechSynthesis.resume(); set(ICONS.pause, 'Pause'); }
       else { speechSynthesis.pause(); set(ICONS.listen, 'Resume'); }
     });
@@ -383,7 +386,9 @@
     u.lang = lang;
     const voices = speechSynthesis.getVoices().filter(v => v.lang.toLowerCase().startsWith(lang.split('-')[0].toLowerCase()));
     u.voice = voices.find(v => v.localService) ?? null;
-    u.onend = u.onerror = done;
+    // cancel() ends the previous utterance later, so only the current one clears `ours`.
+    u.onend = u.onerror = () => { if (ours === u) ours = null; done(); };
+    ours = u;
     speechSynthesis.speak(u);
   }
 
