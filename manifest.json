@@ -48,7 +48,7 @@
   "commands": {
     "translate-selection": {
       "suggested_key": {
-        "default": "Alt+Shift+T"
+        "default": "Alt+Shift+G"
       },
       "description": "Translate the selection"
     }
