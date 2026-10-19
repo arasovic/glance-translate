@@ -161,6 +161,19 @@ test('parsers: HTTP errors keep the raw Provider message, short', () => {
   assert.ok(core.httpError(500, 'x'.repeat(1000)).message.length < 220);
 });
 
+test('debug log: Provider errors show only their status, never their text', async () => {
+  const selection = 'Meet me at the river bank';
+  const e = core.httpError(400, JSON.stringify({ error: { message: `Bad input: ${selection}` } }));
+  assert.ok(e.message.includes(selection)); // The card still gets the raw message.
+  assert.equal(core.debugReason(e.message, e.status), 'HTTP 400');
+  const r = await core.walkChain(['a', 'b'], {
+    skip: async x => (x === 'a' ? 'in Cooldown' : ''),
+    call: async () => { throw core.httpError(500, `<p>${selection}</p>`); },
+  });
+  assert.deepEqual(r.skipped.map(x => core.debugReason(x.reason, x.status)), ['in Cooldown', 'HTTP 500']);
+  assert.equal(core.debugReason('No answer within 10 s'), 'No answer within 10 s');
+});
+
 test('prompt: target rule, Second Language rule, Context Sentence', () => {
   const sure = core.buildMessages({ text: 'run', pick: { sure: true, from: 'en', lang: 'tr' } });
   assert.match(sure[0].content, /into Turkish\./);

@@ -164,6 +164,9 @@ export function httpError(status, body, headers = {}) {
   return Object.assign(err, { status, headers });
 }
 
+// The debug log names a Provider error by its status only: the error text can echo the Selection.
+export const debugReason = (reason, status) => (status ? `HTTP ${status}` : reason);
+
 export function parseMicrosoft(json) {
   const r = json?.[0];
   const text = r?.translations?.[0]?.text;

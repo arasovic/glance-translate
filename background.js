@@ -45,7 +45,11 @@ async function fetchJson(url, init = {}, timeout = TIMEOUT_MS) {
   }
   const body = await res.text();
   if (!res.ok) throw core.httpError(res.status, body, Object.fromEntries(res.headers));
-  return JSON.parse(body);
+  try {
+    return JSON.parse(body);
+  } catch {
+    throw core.httpError(res.status, body); // JSON.parse's own message quotes the body.
+  }
 }
 
 const microsoft = async (text, lang) => core.parseMicrosoft(await fetchJson(
@@ -151,7 +155,7 @@ async function saveCooldown(entry, until) {
 
 // ---- Translation flow ----
 
-// Opt-in debug log (options page → Debug): step timings in this worker's console. Never the text or the key.
+// Opt-in debug log (options page → Debug): step timings in this worker's console. Never the text, the key or a Provider's error text.
 async function timed(on, label, fn) {
   const start = performance.now();
   const ms = () => Math.round(performance.now() - start);
@@ -160,7 +164,7 @@ async function timed(on, label, fn) {
     if (on) console.info(`[Select Translate] ${label}: ${ms()} ms`);
     return value;
   } catch (e) {
-    if (on) console.info(`[Select Translate] ${label}: failed after ${ms()} ms (${e.message})`);
+    if (on) console.info(`[Select Translate] ${label}: failed after ${ms()} ms (${core.debugReason(e.message, e.status)})`);
     throw e;
   }
 }
@@ -181,8 +185,8 @@ async function translate(msg) {
   const s = await getSettings();
   const res = await timed(s.debug, 'translation', () => translateWith(s, msg));
   if (s.debug) {
-    const { text, ...rest } = res;
-    console.info('[Select Translate] result', { chars: msg.text?.trim().length, ...rest });
+    const { text, skipped, ...rest } = res;
+    console.info('[Select Translate] result', { chars: msg.text?.trim().length, ...rest, skipped: skipped?.map(x => `${x.label}: ${core.debugReason(x.reason, x.status)}`) });
   }
   return res;
 }
@@ -217,6 +221,7 @@ async function translateWith(s, { text = '', block, start, end, entry }) {
   const skipped = r.skipped.map(x => ({
     label: core.entryLabel(x.entry),
     reason: x.reason,
+    status: x.status,
     ...(x.reason === core.PACK_MISSING && { pack: `${pick.from}:${pick.lang}` }),
   }));
   if (r.failed) return { ...base, failed: true, skipped };
