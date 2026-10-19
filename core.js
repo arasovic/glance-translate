@@ -101,11 +101,13 @@ export function entryTag(entry) {
 export const PACK_MISSING = 'Offline Pack not downloaded';
 
 // `chrome` is the Translator availability for the pair ('available', 'downloadable', ...) or 'missing'.
-export function skipReason(entry, { now, cooldowns = {}, hasKey, confident, chrome }) {
+// `downloading` is true while Chrome downloads the Language Detector model.
+export function skipReason(entry, { now, cooldowns = {}, hasKey, confident, downloading, chrome }) {
   if (cooldowns[entry] > now) return `in Cooldown until ${new Date(cooldowns[entry]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
   if (isModel(entry) && !hasKey) return 'no OpenRouter key';
   if (entry !== 'chrome') return '';
   if (chrome === 'missing') return 'Translator API not available';
+  if (downloading) return 'language detection model downloading';
   if (!confident) return 'language detection unsure';
   if (chrome === 'unavailable') return 'language pair not supported';
   return chrome === 'available' ? '' : PACK_MISSING;

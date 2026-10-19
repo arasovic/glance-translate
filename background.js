@@ -208,7 +208,7 @@ async function translateWith(settings, { text = '', block, start, end, entry }) 
   const { cooldowns } = await chrome.storage.local.get('cooldowns');
   const ctx = { text, pick, key: settings.openrouterKey, context: block && core.wantsContext(text) ? core.contextSentence(block, start, end) : '' };
   const outcome = await core.walkChain(entry ? [entry] : settings.chain, {
-    skip: async e => core.skipReason(e, { now, cooldowns, hasKey: !!settings.openrouterKey, confident: pick.confident, chrome: e === 'chrome' ? await chromeState(pick) : undefined }),
+    skip: async e => core.skipReason(e, { now, cooldowns, hasKey: !!settings.openrouterKey, confident: pick.confident, downloading: detection.downloading, chrome: e === 'chrome' ? await chromeState(pick) : undefined }),
     call: e => timed(settings.debug, e, () => callEntry(e, ctx)),
   });
 
