@@ -4,7 +4,9 @@ Select Translate translates text you select on a web page. It has no server of i
 
 ## What leaves your browser
 
-Only the Selection leaves the browser, and only when a Fallback Chain entry that runs off-device translates it. AI Models also get the Context Sentence. The page URL, the page title and cookies are never sent.
+Only the text to translate leaves the browser: the Selection, or text you type in the Toolbar Popup. It leaves only when a Fallback Chain entry that runs off-device translates it. Text typed in the Toolbar Popup goes to the same Providers, in the same order, as a Selection. AI Models also get the Context Sentence of a Selection; typed text has none. The page URL, the page title and cookies are never sent.
+
+All text to translate first goes to Chrome's Language Detector, which runs on your device.
 
 | When | What is sent | Sent to |
 |---|---|---|
@@ -15,6 +17,7 @@ Only the Selection leaves the browser, and only when a Fallback Chain entry that
 | You click "Test key", or a Model reports a rate limit | Your OpenRouter API key | `openrouter.ai/api/v1/key` |
 | The options page lists Models | Nothing about you; no key | `openrouter.ai/api/v1/models` |
 | You click an Offline Pack download button | The language pair | Chrome downloads the pack from Google |
+| The first translation, if Chrome does not have its Language Detector model yet | Nothing from the page. Chrome downloads the model without a click. | Chrome downloads the model from Google |
 | You click Listen | The translation | Your browser's speech voices. Some browsers offer voices that run on a network service; the extension prefers voices that run on the device. |
 
 The entries are tried in the order of your Fallback Chain, and the first one that answers stops the walk. With the default chain, Chrome on-device is tried first; Microsoft and Google get the Selection only when Chrome cannot translate it. With a key, AI Models get it only when all three fail, or when you pick a Model in the Translation Card.
@@ -28,11 +31,12 @@ Microsoft, Google, OpenRouter and the Model providers handle the text under thei
 | Settings: Target and Second Language, Trigger Mode, Fallback Chain, Disabled Sites (host names), on/off switch, debug log switch | `chrome.storage.local` | Until you change them or remove the extension |
 | OpenRouter API key | `chrome.storage.local`, never `chrome.storage.sync` | Until you delete it or remove the extension |
 | Cooldown end times per Fallback Chain entry | `chrome.storage.local` | Until they expire |
-| Translation cache: the Selection and its translation | `chrome.storage.session` | Until the browser closes |
+| Translation cache: the Selection or the text typed in the Toolbar Popup, and its translation | `chrome.storage.session` | Until the browser closes |
+| Text for the Toolbar Popup: the Selection, when you use the context menu on a page where the extension's content script cannot run, such as Chrome's PDF viewer | `chrome.storage.session` | Until the Toolbar Popup reads it. If the popup fails to open, it is deleted at once. |
 
 The API key is never logged and never reaches web pages: only the extension's background service worker uses it. Nothing is synced across devices.
 
-The debug log is off by default. When you turn it on in the options page, the service worker's console on your device shows how long each translation step took, the detected language and which entry answered. It never holds the Selection, the translation or the key, and it is not sent anywhere.
+The debug log is off by default. When you turn it on in the options page, the service worker's console on your device shows how long each translation step took, the detected language and which entry answered. It never holds the Selection, the translation or the key, and it is not sent anywhere. A Provider error shows only as its HTTP status code, because the error message can quote the text.
 
 ## Contact
 
