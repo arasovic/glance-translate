@@ -17,26 +17,19 @@ $('target').addEventListener('click', () => {
   const sheet = el('div', { className: 'sheet', innerHTML: `<div class="sheet-hd"><button class="plain" title="Back" aria-label="Back"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3.5L5.5 8l4.5 4.5"/></svg></button><h2>Translate to</h2></div>` });
   sheet.setAttribute('role', 'dialog');
   sheet.setAttribute('aria-label', 'Translate to');
-  const close = () => {
-    sheet.remove();
-    $('main').inert = false;
-    $('target').setAttribute('aria-expanded', 'false');
-    $('target').focus();
-  };
-  sheet.querySelector('button').addEventListener('click', close);
-  sheet.append(languagePanel({
-    list: core.languageList(), value: settings.target, pinned: [settings.target, settings.second], label: 'Target Language', onClose: close,
+  const panel = languagePanel({
+    button: $('target'), list: core.languageList(), value: settings.target, pinned: [settings.target, settings.second], label: 'Target Language',
+    onClose: () => { sheet.remove(); $('main').inert = false; },
     onPick: async code => {
-      close();
-      if (code === settings.target) return;
       settings.target = code;
       showTarget();
       await save({ target: code });
       if ($('text').value.trim()) translate();
     },
-  }));
+  });
+  sheet.querySelector('button').addEventListener('click', panel.close);
+  sheet.append(panel);
   $('main').inert = true;
-  $('target').setAttribute('aria-expanded', 'true');
   document.body.append(sheet);
 });
 

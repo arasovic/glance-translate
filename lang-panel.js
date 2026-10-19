@@ -37,7 +37,10 @@ function el(tag, props = {}, ...kids) {
 let langPanelCount = 0;
 
 // list: [{ code, name (English), own (its own name) }]; pinned: codes for "Your languages"; none: label of an empty choice.
-function languagePanel({ list, value, pinned = [], none, label, onPick, onClose }) {
+// button opens the panel and shows as expanded while it is open. Esc or a pick closes the panel: onClose takes it off
+// the screen, then the button gets the focus back. onPick runs only for a language other than value.
+// panel.close() closes it the same way from outside (the Toolbar Popup's Back button).
+function languagePanel({ button, list, value, pinned = [], none, label, onPick, onClose }) {
   const fold = s => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
   const all = list.map(l => ({ ...l, key: [fold(l.name), fold(l.own)] }));
   const byCode = new Map(all.map(l => [l.code, l]));
@@ -118,6 +121,8 @@ function languagePanel({ list, value, pinned = [], none, label, onPick, onClose 
     setActive(hits.length ? 0 : -1);
   }
 
+  const close = () => { onClose(); button.setAttribute('aria-expanded', 'false'); button.focus(); };
+  const pick = code => { close(); if (code !== value) onPick(code); };
   input.addEventListener('input', render);
   input.addEventListener('keydown', e => {
     const step = { ArrowDown: 1, ArrowUp: -1, PageDown: 8, PageUp: -8 }[e.key];
@@ -126,11 +131,11 @@ function languagePanel({ list, value, pinned = [], none, label, onPick, onClose 
       if (opts.length) setActive(Math.max(0, Math.min(opts.length - 1, active + step)), true);
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      if (opts[active]) onPick(opts[active].dataset.code);
+      if (opts[active]) pick(opts[active].dataset.code);
     } else if (e.key === 'Escape') {
       e.preventDefault();
       e.stopPropagation();
-      onClose();
+      close();
     }
   });
   // Keys typed here must not reach the host page's own shortcuts.
@@ -142,10 +147,12 @@ function languagePanel({ list, value, pinned = [], none, label, onPick, onClose 
   });
   box.addEventListener('click', e => {
     const o = e.target.closest('.lang-option');
-    if (o) onPick(o.dataset.code);
+    if (o) pick(o.dataset.code);
   });
   // Runs once the caller has put the panel in the page and shown it (a popover is shown after its beforetoggle event).
   requestAnimationFrame(() => { render(); input.focus({ preventScroll: true }); });
+  button.setAttribute('aria-expanded', 'true');
+  panel.close = close;
   return panel;
 }
 

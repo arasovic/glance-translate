@@ -213,18 +213,14 @@
       if (closePanel()) return;
       closeMenu();
       const panel = languagePanel({
-        list: langs?.list ?? [], value: target, pinned: [target, ...langs?.pinned ?? []], label: 'Target Language',
-        onClose: () => { closePanel(); b.focus(); },
+        button: b, list: langs?.list ?? [], value: target, pinned: [target, ...langs?.pinned ?? []], label: 'Target Language', onClose: closePanel,
         onPick: async code => {
-          closePanel();
-          if (code === target) return b.focus();
           await chrome.storage.local.set({ target: code });
           translateSelection(lastSelection, { keyboard: true });
         },
       });
       for (const x of card.querySelectorAll('.text, .foot')) x.hidden = true;
       card.querySelector('.head').after(panel);
-      b.setAttribute('aria-expanded', 'true');
       placeCard(lastSelection.box);
     });
     return b;

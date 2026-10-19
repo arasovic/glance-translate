@@ -137,12 +137,12 @@ function langPicker(button, value, onPick, none) {
     pop.style.top = up ? '' : `${rect.bottom + 4}px`;
     pop.style.bottom = up ? `${innerHeight - rect.top + 4}px` : '';
   };
-  const close = () => { pop.hidePopover(); button.focus(); };
   pop.addEventListener('beforetoggle', e => {
     if (e.newState !== 'open') return;
     pop.replaceChildren(languagePanel({
-      list: langList, value: button.value, pinned: [settings.target, settings.second], none, label: button.dataset.label, onClose: close,
-      onPick: code => { close(); if (code !== button.value) { showLang(button, code); onPick(code); } },
+      button, list: langList, value: button.value, pinned: [settings.target, settings.second], none, label: button.dataset.label,
+      onClose: () => pop.hidePopover(),
+      onPick: code => { showLang(button, code); onPick(code); },
     }));
   });
   pop.addEventListener('toggle', e => {
