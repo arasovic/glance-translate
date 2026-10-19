@@ -360,12 +360,15 @@
   }
 
   // Prefers a voice that runs on the device, so the text stays local when possible.
+  // Chrome lists its network voices first and the on-device ones about a second later.
+  // Without a voice, Chrome holds the utterance for that list and picks an on-device voice,
+  // so a network voice is never set here (a language with only a network voice can still get one).
   function speak(text, lang, done) {
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = lang;
     const voices = speechSynthesis.getVoices().filter(v => v.lang.toLowerCase().startsWith(lang.split('-')[0].toLowerCase()));
-    u.voice = voices.find(v => v.localService) ?? voices[0] ?? null;
+    u.voice = voices.find(v => v.localService) ?? null;
     u.onend = u.onerror = done;
     speechSynthesis.speak(u);
   }
