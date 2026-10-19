@@ -1,5 +1,7 @@
 # Glance Translate
 
+![Glance Translate](.github/promo.png)
+
 A Chromium extension (Manifest V3). Select text on a web page and read it in your language, right where it is. It works right after install, with no account and no key.
 
 ![The Translation Card under a selected Turkish sentence, with its English translation](.github/screenshot.png)
