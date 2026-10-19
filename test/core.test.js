@@ -19,6 +19,17 @@ test('languages: Provider codes map both ways', () => {
   assert.ok(!core.sameLanguage('', 'en'));
 });
 
+test('languages: script variants differ, regional variants do not', () => {
+  assert.ok(!core.sameLanguage('zh', 'zh-Hant'));
+  assert.ok(!core.sameLanguage('iu', 'iu-Latn'));
+  assert.ok(core.sameLanguage('zh-Hans', 'zh'));
+  assert.ok(core.sameLanguage('zh-TW', 'zh-Hant'));
+  for (const [a, b] of [['pt', 'pt-PT'], ['pt-BR', 'pt'], ['fr', 'fr-CA'], ['en-US', 'en']]) assert.ok(core.sameLanguage(a, b), `${a} ${b}`);
+  assert.deepEqual(core.pickOutput({ detected: 'zh-Hans', confidence: 0.99, target: 'zh-Hant', second: 'en' }), { sure: true, from: 'zh', lang: 'zh-Hant' });
+  assert.deepEqual(core.pickOutput({ detected: 'zh-Hant', confidence: 0.99, target: 'zh-Hant', second: 'en' }), { sure: true, from: 'zh-Hant', lang: 'en' });
+  assert.deepEqual(core.defaultLanguages(['zh-TW', 'zh', 'en-US', 'en']), { target: 'zh-Hant', second: 'en' });
+});
+
 test('languages: Target and Second Language defaults', () => {
   assert.deepEqual(core.defaultLanguages(['tr-TR', 'tr', 'en-US']), { target: 'tr', second: 'en' });
   assert.deepEqual(core.defaultLanguages(['de-DE', 'fr']), { target: 'de', second: 'fr' });

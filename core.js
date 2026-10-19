@@ -23,7 +23,11 @@ export function canonical(code, provider) {
   return LANGS.includes(base) ? base : ALIASES[base] ?? base;
 }
 
-export const sameLanguage = (a, b) => !!a && !!b && canonical(a).split('-')[0] === canonical(b).split('-')[0];
+const baseOf = code => canonical(code).split('-')[0];
+// Script variants read as different languages (Chrome's detector tells zh-Hant from zh-Hans); regional ones (pt-PT, fr-CA) do not.
+const SCRIPT_VARIANTS = ['zh-Hant', 'iu-Latn'];
+const languageKey = code => (SCRIPT_VARIANTS.includes(canonical(code)) ? canonical(code) : baseOf(code));
+export const sameLanguage = (a, b) => !!a && !!b && languageKey(a) === languageKey(b);
 
 const names = new Intl.DisplayNames(['en'], { type: 'language' });
 // Chrome's ICU data has no English name for some of these (checked on Chrome 155); kmr is only "Kurdish" there.
@@ -46,7 +50,8 @@ export const languageList = () => LANGS.map(code => [code, languageName(code), n
 export function defaultLanguages(navLangs = []) {
   const codes = navLangs.map(l => canonical(l)).filter(l => LANGS.includes(l));
   const target = codes[0] ?? 'en';
-  const second = codes.find(c => !sameLanguage(c, target)) ?? (sameLanguage(target, 'en') ? '' : 'en');
+  // Base languages only: a browser list can hold a bare 'zh' after 'zh-TW', and that is no choice of Simplified Chinese.
+  const second = codes.find(c => baseOf(c) !== baseOf(target)) ?? (sameLanguage(target, 'en') ? '' : 'en');
   return { target, second };
 }
 
