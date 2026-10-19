@@ -6,11 +6,6 @@ const reload = async () => { settings = await core.readSettings(chrome.storage.l
 await reload();
 const save = async values => { await chrome.storage.local.set(values); await reload(); };
 
-function el(tag, props = {}, ...kids) {
-  const node = Object.assign(document.createElement(tag), props);
-  node.append(...kids);
-  return node;
-}
 const iconButton = (text, label, onClick) => {
   const b = el('button', { className: 'plain', textContent: text, title: label });
   b.setAttribute('aria-label', label);

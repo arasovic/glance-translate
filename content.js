@@ -178,12 +178,6 @@
     card.addEventListener('lostpointercapture', () => card.removeEventListener('pointermove', move), { once: true });
   }
 
-  const el = (tag, props = {}, ...kids) => {
-    const node = Object.assign(document.createElement(tag), props);
-    node.append(...kids);
-    return node;
-  };
-
   const send = msg => chrome.runtime.sendMessage(msg).catch(e => ({ error: /context invalidated/i.test(e.message) ? 'Select Translate was updated. Reload this page to use it.' : e.message }));
 
   async function translateSelection(sel, { entry, keyboard } = {}) {

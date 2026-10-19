@@ -14,11 +14,9 @@ const showTarget = () => {
 showTarget();
 // The language panel covers the popup instead of opening below the button: the popup window is too short for a list.
 $('target').addEventListener('click', () => {
-  const sheet = document.createElement('div');
-  sheet.className = 'sheet';
+  const sheet = el('div', { className: 'sheet', innerHTML: `<div class="sheet-hd"><button class="plain" title="Back" aria-label="Back"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3.5L5.5 8l4.5 4.5"/></svg></button><h2>Translate to</h2></div>` });
   sheet.setAttribute('role', 'dialog');
   sheet.setAttribute('aria-label', 'Translate to');
-  sheet.innerHTML = `<div class="sheet-hd"><button class="plain" title="Back" aria-label="Back"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3.5L5.5 8l4.5 4.5"/></svg></button><h2>Translate to</h2></div>`;
   const close = () => {
     sheet.remove();
     $('main').inert = false;
@@ -45,12 +43,7 @@ $('target').addEventListener('click', () => {
 $('options').addEventListener('click', () => chrome.runtime.openOptionsPage());
 const openOptions = hash => chrome.tabs.create({ url: chrome.runtime.getURL(`options.html${hash}`) });
 
-function line(text, cls = '') {
-  const p = document.createElement('p');
-  p.className = `small ${cls}`;
-  p.textContent = text;
-  return p;
-}
+const line = (text, cls = '') => el('p', { className: `small ${cls}`, textContent: text });
 
 function show(res) {
   const out = $('result');
@@ -60,25 +53,12 @@ function show(res) {
   if (res.already) out.append(line(`This text is already in ${core.languageName(res.target)}. Set a Second Language in the options to translate it anyway.`));
   if (res.failed) out.append(line('No entry in the Fallback Chain could translate this.'));
   if (res.text) {
-    const text = document.createElement('div');
-    text.dir = 'auto';
-    text.textContent = res.text;
-    const by = document.createElement('span');
-    by.className = 'by';
-    const b = document.createElement('b');
-    b.textContent = res.answeredBy;
-    by.append(res.from ? `${core.languageName(res.from)}. Answered by ` : 'Answered by ', b);
-    out.append(text, by);
+    const by = el('b', { textContent: res.answeredBy });
+    out.append(el('div', { dir: 'auto', textContent: res.text }), el('span', { className: 'by' }, res.from ? `${core.languageName(res.from)}. Answered by ` : 'Answered by ', by));
   }
   for (const x of res.skipped ?? []) {
     const p = line(`${res.failed ? '' : 'Skipped '}${x.label}: ${x.reason}.`, 'muted');
-    if (x.pack) {
-      const a = document.createElement('button');
-      a.className = 'link';
-      a.textContent = 'Make this pair offline';
-      a.addEventListener('click', () => openOptions(`#pack=${x.pack}`));
-      p.append(' ', a);
-    }
+    if (x.pack) p.append(' ', el('button', { className: 'link', textContent: 'Make this pair offline', onclick: () => openOptions(`#pack=${x.pack}`) }));
     out.append(p);
   }
 }

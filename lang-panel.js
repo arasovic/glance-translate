@@ -1,6 +1,7 @@
 // Language panel for the Toolbar Popup, the options page and the Translation Card: a search field over
 // "Your languages" and all languages, each shown with its own name. A classic script, so the content script
 // can load it too (manifest, before content.js); the content script adds LANG_PANEL_CSS to its Shadow DOM.
+// It also holds el(), the DOM helper that the panel and every page that loads this file share.
 const LANG_PANEL_CSS = `
   .lang { display: inline-flex; align-items: center; gap: 6px; min-width: 0; text-align: left; }
   .lang::after { content: ""; flex: none; width: 5px; height: 5px; margin: 0 2px 0 auto; border: solid var(--mut);
@@ -27,6 +28,12 @@ const LANG_PANEL_CSS = `
   .lang-panel-empty { padding: 16px 12px; text-align: center; color: var(--mut); overflow-wrap: anywhere; }
 `;
 
+function el(tag, props = {}, ...kids) {
+  const node = Object.assign(document.createElement(tag), props);
+  node.append(...kids);
+  return node;
+}
+
 let langPanelCount = 0;
 
 // list: [[code, English name, own name]]; pinned: codes for "Your languages"; none: label of an empty choice.
@@ -48,11 +55,9 @@ function languagePanel({ list, value, pinned = [], none, label, onPick, onClose 
   };
 
   const id = `lang-panel-${++langPanelCount}`;
-  const panel = document.createElement('div');
-  panel.className = 'lang-panel';
-  panel.innerHTML = `<div class="lang-panel-search"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg>
+  const panel = el('div', { className: 'lang-panel', innerHTML: `<div class="lang-panel-search"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg>
     <input type="text" role="combobox" aria-autocomplete="list" aria-expanded="true" autocomplete="off" spellcheck="false" placeholder="Search languages" aria-label="Search languages"></div>
-    <div class="lang-panel-list" role="listbox"></div>`;
+    <div class="lang-panel-list" role="listbox"></div>` });
   const input = panel.querySelector('input'), box = panel.querySelector('.lang-panel-list');
   box.id = `${id}-list`;
   box.setAttribute('aria-label', label);
@@ -61,36 +66,20 @@ function languagePanel({ list, value, pinned = [], none, label, onPick, onClose 
 
   const CHECK = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
   function option(l) {
-    const o = document.createElement('div');
-    o.className = 'lang-option';
-    o.id = `${id}-${opts.length}`;
+    const o = el('div', { className: 'lang-option', id: `${id}-${opts.length}`, innerHTML: CHECK }, el('span', { className: 'lang-option-name', textContent: l.name }));
     o.dataset.code = l.code;
     o.setAttribute('role', 'option');
     o.setAttribute('aria-selected', String(l.code === value));
-    o.innerHTML = CHECK;
-    const name = document.createElement('span');
-    name.className = 'lang-option-name';
-    name.textContent = l.name;
-    o.append(name);
-    if (l.own) {
-      const own = document.createElement('span');
-      own.className = 'lang-option-native';
-      own.lang = l.code;
-      own.textContent = l.own;
-      o.append(own);
-    }
+    if (l.own) o.append(el('span', { className: 'lang-option-native', lang: l.code, textContent: l.own }));
     opts.push(o);
     return o;
   }
 
   function group(title, items) {
-    const g = document.createElement('div');
+    const g = el('div');
     g.setAttribute('role', 'group');
     if (title) {
-      const h = document.createElement('div');
-      h.className = 'lang-panel-group';
-      h.id = `${id}-g${box.children.length}`;
-      h.textContent = title;
+      const h = el('div', { className: 'lang-panel-group', id: `${id}-g${box.children.length}`, textContent: title });
       g.setAttribute('aria-labelledby', h.id);
       g.append(h);
     }
@@ -124,7 +113,7 @@ function languagePanel({ list, value, pinned = [], none, label, onPick, onClose 
     }
     const hits = all.map(l => [l, rank(l, q)]).filter(([, r]) => r >= 0).sort((a, b) => a[1] - b[1]).map(([l]) => l);
     if (hits.length) group('', hits);
-    else box.append(Object.assign(document.createElement('div'), { className: 'lang-panel-empty', textContent: `No language matches “${input.value.trim()}”.` }));
+    else box.append(el('div', { className: 'lang-panel-empty', textContent: `No language matches “${input.value.trim()}”.` }));
     box.scrollTop = 0;
     setActive(hits.length ? 0 : -1);
   }
@@ -161,4 +150,4 @@ function languagePanel({ list, value, pinned = [], none, label, onPick, onClose 
 }
 
 // Extension pages load this file with a <script> tag; content scripts have no currentScript.
-if (document.currentScript) document.head.append(Object.assign(document.createElement('style'), { textContent: LANG_PANEL_CSS }));
+if (document.currentScript) document.head.append(el('style', { textContent: LANG_PANEL_CSS }));
