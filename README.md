@@ -12,7 +12,7 @@ It has no server of its own, no telemetry and no analytics. [PRIVACY.md](PRIVACY
 
 ## Install
 
-Get it from the [Chrome Web Store](https://chromewebstore.google.com/detail/glance-translate/dgifldohfcjafakfdphngfhjmmjehlff).
+[![Available in the Chrome Web Store](.github/chrome-web-store-badge.png)](https://chromewebstore.google.com/detail/glance-translate/dgifldohfcjafakfdphngfhjmmjehlff)
 
 ## Install from source
 
