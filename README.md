@@ -10,6 +10,10 @@ A Chromium extension (Manifest V3). Select text on a web page and read it in you
 
 It has no server of its own, no telemetry and no analytics. [PRIVACY.md](PRIVACY.md) lists every piece of data it handles and where it goes.
 
+## Install
+
+Get it from the [Chrome Web Store](https://chromewebstore.google.com/detail/glance-translate/dgifldohfcjafakfdphngfhjmmjehlff).
+
 ## Install from source
 
 1. Open `chrome://extensions` and turn on Developer mode.
