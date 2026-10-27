@@ -154,6 +154,13 @@ test('cooldown: reset parsing and keyless defaults', () => {
   assert.equal(core.cooldownUntil({ entry: 'microsoft', headers: { 'retry-after': '10' }, now: NOW }), NOW + 10_000);
 });
 
+test('chrome: each line is translated on its own, blank and letterless lines stay', async () => {
+  const calls = [];
+  const upper = async line => (calls.push(line), line.toUpperCase());
+  assert.equal(await core.translateLines(upper, 'Title\n\nFirst item\n•\nSecond item'), 'TITLE\n\nFIRST ITEM\n•\nSECOND ITEM');
+  assert.deepEqual(calls, ['Title', 'First item', 'Second item']);
+});
+
 test('parsers: Microsoft, Google', () => {
   const ms = [{ detectedLanguage: { language: 'en', score: 1 }, translations: [{ text: 'Merhaba dünya.\nİkinci satır.', to: 'tr' }] }];
   assert.deepEqual(core.parseMicrosoft(ms), { text: 'Merhaba dünya.\nİkinci satır.', detected: 'en' });

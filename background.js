@@ -97,7 +97,8 @@ async function chromeTranslate(text, pick) {
     translators.set(pair, Translator.create({ sourceLanguage: pick.from, targetLanguage: pick.lang }));
   }
   try {
-    return { text: await (await translators.get(pair)).translate(text), lang: pick.lang };
+    const translator = await translators.get(pair);
+    return { text: await core.translateLines(line => translator.translate(line), text), lang: pick.lang };
   } catch (e) {
     translators.delete(pair);
     throw e;

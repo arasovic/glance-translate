@@ -81,6 +81,12 @@ export async function applySecondLanguage(translate, text, pick) {
   return { ...(await translate(text, pick.second)), lang: pick.second };
 }
 
+// Chrome's on-device Translator drops line breaks, so each line is translated on its own; lines without letters stay as they are.
+export async function translateLines(translate, text) {
+  const lines = await Promise.all(text.split('\n').map(line => (/\p{L}/u.test(line) ? translate(line) : line)));
+  return lines.join('\n');
+}
+
 export const OR_PREFIX = 'openrouter:';
 export const FREE_ROUTER = 'openrouter/free';
 // Keyless Providers with their labels, in Fallback Chain order. background.js callEntry() calls each one.
